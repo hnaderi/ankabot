@@ -23,6 +23,8 @@ lazy val core = project
       "org.typelevel" %% "cats-core" % "2.9.0",
       "org.typelevel" %% "cats-effect" % "3.4.9",
       "org.http4s" %% "http4s-jdk-http-client" % "0.9.0",
+      "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
+      "org.jsoup" % "jsoup" % "1.15.4",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
     )

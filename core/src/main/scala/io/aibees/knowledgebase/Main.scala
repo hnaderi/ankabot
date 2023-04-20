@@ -1,9 +1,12 @@
 package io.aibees.knowledgebase
 
-import cats.effect.{IO, IOApp}
+import cats.effect.IO
+import cats.effect.IOApp
+import io.odin.Logger
 
 object Main extends IOApp.Simple {
+  private given Logger[IO] = io.odin.consoleLogger[IO]()
 
   def run: IO[Unit] =
-    IO.println("Hello sbt-typelevel!")
+    Application().compile.drain
 }
