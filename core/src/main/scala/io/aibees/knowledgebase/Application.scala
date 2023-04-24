@@ -9,22 +9,29 @@ import fs2.io.file.Files
 import fs2.io.file.Path
 import io.odin.Logger
 import org.http4s.Uri
+import org.http4s.syntax.literals.uri
 import org.http4s.jdkhttpclient.JdkHttpClient
+import io.circe.syntax.*
 
 def Application()(using Logger[IO]): Stream[IO, Unit] = for {
-  scraper <- eval(JClient()).map(JdkHttpClient[IO](_)).map(Scraper(_))
-  _ <- Sources(
-    Path("/storage/projects/ai-bees/knowledge-base/seeds.txt")
-  ).through(process(scraper))
+  fetcher <- eval(JClient()).map(JdkHttpClient[IO](_)).map(Fetcher(_))
+  sources = Sources(
+    Path("/storage/projects/ai-bees/knowledge-base/seed/seeds.txt")
+  )
+  // sources = Stream(uri"https://www.oryxalign.com/")
+  _ <- sources.through(process(fetcher))
 } yield ()
 
-def process(scraper: Scraper): Pipe[IO, Uri, Nothing] =
-  _.parEvalMap(10)(scraper.get(_).attempt).foreach {
+def process(fetch: Fetcher)(using logger: Logger[IO]): Pipe[IO, Uri, Nothing] =
+  _.parEvalMap(10)(fetch(_).attempt).foreach {
     case Right(traffik) =>
       for {
-        _ <- Extractor(traffik.body)
-        _ <- IO.println("Headers")
-        _ <- traffik.headers.headers.traverse(IO.println)
+        _ <- logger.info("Traffik")
+        _ <- IO.println(traffik.asJson.spaces2)
+
+        data <- Extractor(traffik.body)
+        _ <- logger.info("Scraped")
+        _ <- IO.println(data.asJson.spaces2)
       } yield ()
     case Left(err) => IO.println("Skipping...")
   }
