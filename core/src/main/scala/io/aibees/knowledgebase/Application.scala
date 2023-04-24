@@ -1,7 +1,7 @@
 package io.aibees.knowledgebase
 
 import cats.effect.IO
-import cats.implicits.*
+import cats.syntax.all.*
 import fs2.Pipe
 import fs2.Stream
 import fs2.Stream.*
@@ -12,34 +12,55 @@ import org.http4s.Uri
 import org.http4s.syntax.literals.uri
 import org.http4s.jdkhttpclient.JdkHttpClient
 import io.circe.syntax.*
+import io.circe.Json
+import java.net.URI
 
-def Application()(using Logger[IO]): Stream[IO, Unit] = for {
+// private val resultPath = Path(
+//   "/storage/projects/ai-bees/knowledge-base/result.json.line"
+// )
+// private val seedsPath = Path(
+//   "/storage/projects/ai-bees/knowledge-base/seed/seeds.txt"
+// )
+
+def Application(source: Path, result: Path)(using
+    Logger[IO]
+): Stream[IO, Unit] = for {
   fetcher <- eval(JClient()).map(JdkHttpClient[IO](_)).map(Fetcher(_))
-  sources = Sources(
-    Path("/storage/projects/ai-bees/knowledge-base/seed/seeds.txt")
-  )
-  // sources = Stream(uri"https://www.oryxalign.com/")
-  _ <- sources.through(process(fetcher))
+  sources = Sources(source)
+  _ <- sources
+    .through(process(fetcher))
+    .map(_.asJson)
+    .through(Result(result))
 } yield ()
 
-def process(fetch: Fetcher)(using logger: Logger[IO]): Pipe[IO, Uri, Nothing] =
-  _.parEvalMap(10)(fetch(_)).foreach {
-    case Right(traffik) =>
-      for {
-        _ <- logger.info("Traffik")
-        _ <- IO.println(traffik.asJson.spaces2)
-
-        data <- Extractor(traffik.body)
-        _ <- logger.info("Scraped")
-        _ <- IO.println(data.asJson.spaces2)
-      } yield ()
-    case Left(error) => logger.error(s"Skipping due to $error")
-  }
+def process(fetch: Fetcher): Pipe[IO, Uri, ScrapeResult[PersistedResult]] =
+  _.parEvalMap(10)(fetch(_))
+    .evalMap(
+      _.traverse(traffik =>
+        Extractor(traffik.body).map(PersistedResult(traffik, _))
+      )
+    )
 
 def Sources(path: Path)(using logger: Logger[IO]): Stream[IO, Uri] = Files[IO]
   .readAll(path)
   .through(fs2.text.utf8.decode)
   .through(fs2.text.lines)
   .evalTap(logger.debug(_))
-  .map(Uri.fromString)
-  .flatMap(Stream.fromEither(_))
+  .through(toUri)
+
+def Result(path: Path): Pipe[IO, Json, Nothing] = _.map(_.noSpaces)
+  .intersperse("\n")
+  .through(fs2.text.utf8.encode)
+  .through(Files[IO].writeAll(path))
+
+private def toUri: Pipe[IO, String, Uri] = _.flatMap { s =>
+  val uri =
+    if (s.startsWith("http"))
+    then Uri.fromString(s)
+    else Uri.fromString(s"http://$s")
+
+  uri match {
+    case Right(value) => emit(value)
+    case Left(err)    => raiseError(err)
+  }
+}
