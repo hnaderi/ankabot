@@ -6,11 +6,14 @@ import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
 import scala.concurrent.duration.*
+import java.util.concurrent.TimeoutException
+import org.http4s.client.middleware.FollowRedirect
 
-type Fetcher = Uri => IO[RawScrapedData]
+type Fetcher = Uri => IO[Either[ScrapeError, RawScrapedData]]
 
 object Fetcher {
-  def apply(client: Client[IO]): Fetcher = url => {
+  def simple(client: Client[IO]): Fetcher = url => {
+
     val req = GET(
       url,
       Header(
@@ -21,7 +24,7 @@ object Fetcher {
     client
       .run(req)
       .use { resp =>
-        resp.bodyText.compile.string.map(
+        resp.bodyText.compile.string.map(body =>
           RawScrapedData(
             resp.headers.headers.map(h => (h.name.toString, h.value)),
             resp.status.code,
@@ -33,10 +36,20 @@ object Fetcher {
                 path = rc.path
               )
             ),
-            _
+            body
           )
         )
       }
       .timeout(5.seconds)
+      .attempt
+      .map {
+        case Right(value)              => Right(value)
+        case Left(_: TimeoutException) => Left(ScrapeError.Timeout)
+        case Left(_)                   => Left(ScrapeError.Failed)
+      }
   }
+
+  def apply(client: Client[IO], maxRedirects: Int = 3): Fetcher = simple(
+    FollowRedirect(maxRedirects)(client)
+  )
 }

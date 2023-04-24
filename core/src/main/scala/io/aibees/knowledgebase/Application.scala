@@ -23,7 +23,7 @@ def Application()(using Logger[IO]): Stream[IO, Unit] = for {
 } yield ()
 
 def process(fetch: Fetcher)(using logger: Logger[IO]): Pipe[IO, Uri, Nothing] =
-  _.parEvalMap(10)(fetch(_).attempt).foreach {
+  _.parEvalMap(10)(fetch(_)).foreach {
     case Right(traffik) =>
       for {
         _ <- logger.info("Traffik")
@@ -33,7 +33,7 @@ def process(fetch: Fetcher)(using logger: Logger[IO]): Pipe[IO, Uri, Nothing] =
         _ <- logger.info("Scraped")
         _ <- IO.println(data.asJson.spaces2)
       } yield ()
-    case Left(err) => IO.println("Skipping...")
+    case Left(error) => logger.error(s"Skipping due to $error")
   }
 
 def Sources(path: Path)(using logger: Logger[IO]): Stream[IO, Uri] = Files[IO]

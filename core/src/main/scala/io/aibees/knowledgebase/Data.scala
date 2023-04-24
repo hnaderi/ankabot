@@ -44,8 +44,7 @@ final case class RawScrapedData(
     body: String
 ) derives Codec.AsObject
 
-enum ScrapeResult {
-  case Success(data: ExtractedData)
+enum ScrapeError {
   case Timeout
   case BadStatus(status: Int, message: Option[String] = None)
   case Failed
