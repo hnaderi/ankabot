@@ -52,20 +52,32 @@ object Extractors {
 
   // https://www.rfc-editor.org/info/rfc5322
   private val email = """[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+""".r
-  private[knowledgebase] val phone =
-    """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- _]?)+""".r
+  private val phonePattern =
+    """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- ]?)+""".r
   val body: DataExtractor = in =>
     ExtractedData(
       contacts = in.texts
         .flatMap(email.findAllIn(_))
         .map(s => Contact.Email(s.trim))
-        .toSet ++
-        in.texts
-          .flatMap(phone.findAllIn(_))
-          .filter(_.length() > 8)
-          .map(s => Contact.Phone(s.trim))
-          .toSet
+        .toSet ++ in.texts.flatMap(phonesIn).toSet
     )
+
+  private[knowledgebase] def phonesIn(str: String): Iterator[Contact] =
+    phonePattern
+      .findAllIn(str)
+      .map(_.trim)
+      .filterNot(notAPhoneNumber)
+      .map(Contact.Phone(_))
+
+  private val yearPattern = """.*\b(\d{4})\b.*""".r
+  private def looksLikeDate(str: String) = str match {
+    case yearPattern(numbers*) =>
+      numbers.map(_.toInt).exists(n => n >= 1900 && n <= 2100)
+    case _ => false
+  }
+
+  private def notAPhoneNumber(phone: String) =
+    phone.size <= 8 || looksLikeDate(phone)
 
   private val extractors = Seq(links, body)
   def all: DataExtractor = in => extractors.map(_.apply(in)).combineAll
