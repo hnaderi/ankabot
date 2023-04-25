@@ -54,16 +54,16 @@ enum ScrapeError derives Codec.AsObject {
 }
 
 final case class ExtractedData(
-    contacts: List[Contact] = Nil,
-    technologies: List[String] = Nil
+    contacts: Set[Contact] = Set.empty,
+    technologies: Set[String] = Set.empty
 ) derives Codec.AsObject
 
 object ExtractedData {
   given Monoid[ExtractedData] = new {
     override def combine(x: ExtractedData, y: ExtractedData): ExtractedData =
       ExtractedData(
-        contacts = x.contacts ::: y.contacts,
-        technologies = x.technologies ::: y.technologies
+        contacts = x.contacts ++ y.contacts,
+        technologies = x.technologies ++ y.technologies
       )
 
     override def empty: ExtractedData = ExtractedData()
@@ -82,12 +82,29 @@ final case class ScrapedData(
     comments: Set[String] = Set.empty
 ) derives Codec.AsObject
 
-type DataExtractor = ScrapedData => ExtractedData
+type DataExtractor = WebPage => ExtractedData
 
 final case class PersistedData(
     raw: RawScrapedData,
     data: ScrapedData
 ) derives Codec.AsObject
+
+object PersistedData {
+  def apply(
+      raw: RawScrapedData,
+      page: WebPage
+  ): PersistedData = new PersistedData(
+    raw,
+    ScrapedData(
+      title = page.title,
+      scripts = page.scripts,
+      styles = page.styles,
+      metadata = page.metadata,
+      links = page.links,
+      comments = page.comments
+    )
+  )
+}
 
 type PersistedResult = ScrapeResult[PersistedData]
 

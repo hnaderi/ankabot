@@ -30,7 +30,7 @@ def process(fetch: Fetcher): Pipe[IO, Uri, PersistedResult] =
     .through(Metrics)
     .evalMap(
       _.traverse(traffik =>
-        Extractor(traffik.body).map(PersistedData(traffik, _))
+        IO.fromEither(JsoupWebPage(traffik.body).map(PersistedData(traffik, _)))
       )
     )
 

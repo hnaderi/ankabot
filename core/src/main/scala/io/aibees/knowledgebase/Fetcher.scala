@@ -5,10 +5,11 @@ import org.http4s.Method.GET
 import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
-import scala.concurrent.duration.*
-import java.util.concurrent.TimeoutException
 import org.http4s.client.middleware.FollowRedirect
+
 import java.net.URI
+import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.*
 
 type FetchResult = ScrapeResult[RawScrapedData]
 type Fetcher = Uri => IO[FetchResult]

@@ -5,14 +5,14 @@ import cats.syntax.all.*
 import java.net.URI
 
 object Extractors {
-  val contacts: DataExtractor = in =>
+  val links: DataExtractor = in =>
     ExtractedData(
-      contacts = in.links.collect { case IsContact(value) => value }.toList
+      contacts = in.links.collect { case IsContact(value) => value }
     )
 
   private object IsContact {
     private val emailPattern = """mailto:(.+@.+)""".r
-    private val phonePattern = """tel:(.+)""".r
+    private val phonePattern = """tel:(.{8,})""".r
     private val invalidPhoneCharacters = "[^+0-9]".r
     private def buildURI(str: String) = Either.catchNonFatal(URI(str)).toOption
 
@@ -21,19 +21,22 @@ object Extractors {
         case emailPattern(mail) => Contact.Email(mail).some
         case phonePattern(value) =>
           Contact.Phone(invalidPhoneCharacters.replaceAllIn(value, "")).some
-        case IsSocialContact(network) =>
+        case IsSocialNetwork(network) =>
           buildURI(str).map(Contact.Social(network, _))
         case _ => None
       }
   }
 
-  private object IsSocialContact {
-    private val linkedin = """.*linkedin\.com/in/.*""".r
-    private val telegram = """.*t\.me.*""".r
-    private val instagram = """.*instagram\.com/.*""".r
-    private val twitter = """.*twitter\.com/.*""".r
-    private val facebook = """.*facebook\.com/.*""".r
-    private val youtube = """.*youtube\.com/channel.*""".r
+  private object IsSocialNetwork {
+    private def website(pattern: String) =
+      s"""(?:https?://)(?:www.)?${pattern}""".r
+
+    private val linkedin = website("linkedin\\.com/in/.*")
+    private val telegram = website(".*t\\.me.*")
+    private val instagram = website("instagram\\.com/.*")
+    private val twitter = website("twitter\\.com/.*")
+    private val facebook = website("facebook\\.com/.*")
+    private val youtube = website("youtube\\.com/channel.*")
 
     def unapply(str: String): Option[SocialNetwork] =
       str match {
@@ -46,5 +49,24 @@ object Extractors {
         case _           => None
       }
   }
+
+  // https://www.rfc-editor.org/info/rfc5322
+  private val email = """[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+""".r
+  private val phone = """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- _]?)+""".r
+  val body: DataExtractor = in =>
+    ExtractedData(
+      contacts = in.texts
+        .flatMap(email.findAllIn(_))
+        .map(s => Contact.Email(s.trim))
+        .toSet ++
+        in.texts
+          .flatMap(phone.findAllIn(_))
+          .filter(_.length() > 8)
+          .map(s => Contact.Phone(s.trim))
+          .toSet
+    )
+
+  private val extractors = Seq(links, body)
+  def all: DataExtractor = in => extractors.map(_.apply(in)).combineAll
 
 }
