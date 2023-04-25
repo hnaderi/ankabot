@@ -31,12 +31,12 @@ object Extractors {
     private def website(pattern: String) =
       s"""(?:https?://)(?:www.)?${pattern}""".r
 
-    private val linkedin = website("linkedin\\.com/in/.*")
-    private val telegram = website(".*t\\.me.*")
-    private val instagram = website("instagram\\.com/.*")
-    private val twitter = website("twitter\\.com/.*")
-    private val facebook = website("facebook\\.com/.*")
-    private val youtube = website("youtube\\.com/channel.*")
+    private val linkedin = website("linkedin\\.com/in/.+")
+    private val telegram = website("t\\.me/.+")
+    private val instagram = website("instagram\\.com/.+")
+    private val twitter = website("twitter\\.com/.+")
+    private val facebook = website("facebook\\.com/.+")
+    private val youtube = website("youtube\\.com/channel/.+")
 
     def unapply(str: String): Option[SocialNetwork] =
       str match {
