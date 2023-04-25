@@ -1,16 +1,12 @@
 package io.aibees.knowledgebase
 
-import java.net.URI
-import cats.kernel.Monoid
-import io.circe.Codec
+import cats.*
 import cats.syntax.all.*
-import cats.Functor
-import cats.Traverse
-import cats.Applicative
-import cats.Eval
-import cats.Show
+import io.circe.Codec
 
-enum Contact {
+import java.net.URI
+
+enum Contact derives Codec.AsObject {
   case Email(value: String)
   case Phone(number: String)
   case Social(network: SocialNetwork, contact: URI)
@@ -60,7 +56,7 @@ enum ScrapeError derives Codec.AsObject {
 final case class ExtractedData(
     contacts: List[Contact] = Nil,
     technologies: List[String] = Nil
-)
+) derives Codec.AsObject
 
 object ExtractedData {
   given Monoid[ExtractedData] = new {
@@ -88,10 +84,12 @@ final case class ScrapedData(
 
 type DataExtractor = ScrapedData => ExtractedData
 
-final case class PersistedResult(
+final case class PersistedData(
     raw: RawScrapedData,
     data: ScrapedData
 ) derives Codec.AsObject
+
+type PersistedResult = ScrapeResult[PersistedData]
 
 final case class ScrapeResult[T](
     source: URI,

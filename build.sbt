@@ -13,7 +13,14 @@ ThisBuild / developers := List(
 ThisBuild / fork := true
 ThisBuild / scalaVersion := "3.2.2"
 
-lazy val root = project.in(file(".")).aggregate(core)
+lazy val root = project.in(file(".")).aggregate(core, scraper, extractor)
+
+def module(mname: String): Project => Project =
+  _.in(file(s"modules/$mname"))
+    .settings(
+      name := s"module-$mname",
+      moduleName := s"knowledge-base-$mname"
+    )
 
 lazy val core = project
   .in(file("core"))
@@ -31,3 +38,11 @@ lazy val core = project
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
     )
   )
+
+lazy val scraper = module("scraper") {
+  project.dependsOn(core)
+}
+
+lazy val extractor = module("extractor") {
+  project.dependsOn(core)
+}
