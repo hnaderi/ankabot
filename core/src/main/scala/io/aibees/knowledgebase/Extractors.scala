@@ -52,7 +52,8 @@ object Extractors {
 
   // https://www.rfc-editor.org/info/rfc5322
   private val email = """[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+""".r
-  private val phone = """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- _]?)+""".r
+  private[knowledgebase] val phone =
+    """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- _]?)+""".r
   val body: DataExtractor = in =>
     ExtractedData(
       contacts = in.texts
