@@ -29,11 +29,41 @@ final case class Statistics(
 }
 
 object Statistics {
-  given Show[Statistics] = Show.show(st => s"""OK: ${st.ok}
+  given Show[Statistics] = Show.show(st => s"""Statistics:
+=======================
+OK: ${st.ok}
 Failed: ${st.failed}
 Timedout: ${st.timedout}
 ${st.byStatus.map((k, v) => s"$k: $v").mkString("\n")}
-
 Total: ${st.total}
+=======================
 """)
+
+  import scala.concurrent.duration.*
+  import cats.effect.kernel.RefSink
+  import cats.effect.IO
+  import cats.syntax.all.*
+  import fs2.Pipe
+  import fs2.Stream.*
+  import io.odin.Logger
+
+  def calculate(
+      printInterval: FiniteDuration = 10.seconds
+  )(using logger: Logger[IO]): Pipe[IO, FetchResult, FetchResult] =
+    in => {
+      eval(IO.ref(Statistics())).flatMap { stats =>
+        val print = stats.get.flatMap(logger.info(_))
+
+        in.through(metrics(stats))
+          .onFinalize(print)
+          .concurrently(awakeEvery[IO](printInterval).foreach(_ => print))
+      }
+    }
+
+  private def metrics(
+      stats: RefSink[IO, Statistics]
+  )(using logger: Logger[IO]): Pipe[IO, FetchResult, FetchResult] =
+    _.zipWithScan(Statistics())(_.add(_))
+      .evalTap((_, s) => stats.set(s))
+      .map(_._1)
 }
