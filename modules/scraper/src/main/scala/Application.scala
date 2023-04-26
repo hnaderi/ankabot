@@ -25,6 +25,8 @@ def process(fetch: Fetcher)(using Logger[IO]): Pipe[IO, Uri, PersistedResult] =
     .through(Statistics.calculate())
     .evalMap(
       _.traverse(traffik =>
-        IO.fromEither(JsoupWebPage(traffik.body).map(PersistedData(traffik, _)))
+        IO.fromEither(
+          JsoupWebPage(traffik.body, traffik.url).map(PersistedData(traffik, _))
+        )
       )
     )

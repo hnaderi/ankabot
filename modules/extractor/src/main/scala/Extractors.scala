@@ -14,15 +14,14 @@ object Extractors {
     private val emailPattern = """mailto:(.+@.+)""".r
     private val phonePattern = """tel:(.{8,})""".r
     private val invalidPhoneCharacters = "[^+0-9]".r
-    private def buildURI(str: String) = Either.catchNonFatal(URI(str)).toOption
 
-    def unapply(str: String): Option[Contact] =
-      str match {
+    def unapply(str: Link): Option[Contact] =
+      str.value.toString match {
         case emailPattern(mail) => Contact.Email(mail).some
         case phonePattern(value) =>
           Contact.Phone(invalidPhoneCharacters.replaceAllIn(value, "")).some
         case IsSocialNetwork(network) =>
-          buildURI(str).map(Contact.Social(network, _))
+          Contact.Social(network, str.value).some
         case _ => None
       }
   }

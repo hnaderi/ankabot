@@ -8,6 +8,7 @@ import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import org.jsoup.select.NodeVisitor
 
+import java.net.URI
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
@@ -15,7 +16,17 @@ final class JsoupWebPage private (doc: Document) extends WebPage {
 
   override lazy val scripts: Set[String] = select(doc, "script", "src")
 
-  override lazy val links: Set[String] = select(doc, "a", "href")
+  override lazy val links: Set[Link] =
+    doc
+      .select("a")
+      .asScala
+      .map(a =>
+        try {
+          Link(a.text(), URI.create(a.absUrl("href"))).some
+        } catch { case _ => None }
+      )
+      .collect { case Some(l) if !l.text.isBlank && l.value.isAbsolute => l }
+      .toSet
 
   override lazy val title: String = doc.title()
 
@@ -62,9 +73,15 @@ final class JsoupWebPage private (doc: Document) extends WebPage {
 }
 
 object JsoupWebPage {
-  def apply(body: String): Either[Throwable, JsoupWebPage] =
-    Either.catchNonFatal(Jsoup.parse(body)).map(new JsoupWebPage(_))
+  def apply(body: String, base: URI): Either[Throwable, JsoupWebPage] =
+    Either
+      .catchNonFatal {
+        val d = Jsoup.parse(body)
+        d.setBaseUri(base.toString)
+        d
+      }
+      .map(new JsoupWebPage(_))
 
   def apply(stored: PersistedData): Either[Throwable, JsoupWebPage] =
-    apply(stored.raw.body)
+    apply(stored.raw.body, stored.raw.url)
 }

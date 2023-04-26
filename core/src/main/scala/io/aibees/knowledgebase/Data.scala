@@ -38,36 +38,19 @@ enum ScrapeError derives Codec.AsObject {
   case Failed
 }
 
-final case class ExtractedData(
-    contacts: Set[Contact] = Set.empty,
-    technologies: Set[String] = Set.empty
-) derives Codec.AsObject
-
-object ExtractedData {
-  given Monoid[ExtractedData] = new {
-    override def combine(x: ExtractedData, y: ExtractedData): ExtractedData =
-      ExtractedData(
-        contacts = x.contacts ++ y.contacts,
-        technologies = x.technologies ++ y.technologies
-      )
-
-    override def empty: ExtractedData = ExtractedData()
-  }
-}
-
 final case class PageMetadata(name: String, content: String)
     derives Codec.AsObject
+
+final case class Link(text: String, value: URI) derives Codec.AsObject
 
 final case class ScrapedData(
     title: String,
     scripts: Set[String] = Set.empty,
     styles: Set[String] = Set.empty,
     metadata: Set[PageMetadata] = Set.empty,
-    links: Set[String] = Set.empty,
+    links: Set[Link] = Set.empty,
     comments: Set[String] = Set.empty
 ) derives Codec.AsObject
-
-type DataExtractor = WebPage => ExtractedData
 
 final case class PersistedData(
     raw: RawScrapedData,

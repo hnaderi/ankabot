@@ -5,7 +5,7 @@ trait WebPage {
   def scripts: Set[String]
   def styles: Set[String]
   def metadata: Set[PageMetadata]
-  def links: Set[String]
+  def links: Set[Link]
   def comments: Set[String]
 
   def texts: Iterable[String]
