@@ -19,7 +19,11 @@ def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))
     .settings(
       name := s"module-$mname",
-      moduleName := s"knowledge-base-$mname"
+      moduleName := s"knowledge-base-$mname",
+      libraryDependencies ++= Seq(
+        "org.scalameta" %% "munit" % "0.7.29" % Test,
+        "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
+      )
     )
 
 lazy val core = project

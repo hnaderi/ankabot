@@ -12,6 +12,6 @@ trait WebPage {
 }
 
 trait HomePage extends WebPage {
-  def aboutPage: Option[WebPage] = None
-  def contactPage: Option[WebPage] = None
+  def aboutPage: Option[WebPage]
+  def contactPage: Option[WebPage]
 }
