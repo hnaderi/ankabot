@@ -11,21 +11,23 @@ import io.circe.Json
 import io.circe.syntax.*
 import io.odin.Logger
 import org.http4s.Uri
-import org.http4s.jdkhttpclient.JdkHttpClient
+import scala.concurrent.duration.*
 
 import java.net.URI
+import cats.effect.kernel.RefSink
 
 def Application(source: Path, result: Path)(using
     Logger[IO]
 ): Stream[IO, Unit] = for {
-  fetcher <- eval(JClient()).map(JdkHttpClient[IO](_)).map(Fetcher(_))
+  // fetcher <- eval(JClient()).map(Fetcher(_))
+  fetcher <- resource(EClient()).map(Fetcher(_))
   sources = Storage.sources(source)
   _ <- sources
     .through(process(fetcher))
     .through(Storage.write(result))
 } yield ()
 
-def process(fetch: Fetcher): Pipe[IO, Uri, PersistedResult] =
+def process(fetch: Fetcher)(using Logger[IO]): Pipe[IO, Uri, PersistedResult] =
   _.parEvalMap(10)(fetch(_))
     .through(Metrics)
     .evalMap(
@@ -34,15 +36,20 @@ def process(fetch: Fetcher): Pipe[IO, Uri, PersistedResult] =
       )
     )
 
-def Metrics: Pipe[IO, FetchResult, FetchResult] = in => {
-  def go(
-      in: Stream[IO, FetchResult],
-      stats: Statistics = Statistics()
-  ): Pull[cats.effect.IO, FetchResult, Unit] =
-    in.pull.uncons1.flatMap {
-      case None             => Pull.eval(IO.println(stats))
-      case Some(data, next) => go(next, stats.add(data))
-    }
+def Metrics(using logger: Logger[IO]): Pipe[IO, FetchResult, FetchResult] =
+  in => {
+    eval(IO.ref(Statistics())).flatMap { stats =>
+      val print = stats.get.flatMap(logger.info(_))
 
-  go(in).stream
-}
+      in.through(MetricsWriter(stats))
+        .onFinalize(print)
+        .concurrently(awakeEvery[IO](10.seconds).foreach(_ => print))
+    }
+  }
+
+private def MetricsWriter(
+    stats: RefSink[IO, Statistics]
+)(using logger: Logger[IO]): Pipe[IO, FetchResult, FetchResult] =
+  _.zipWithScan(Statistics())(_.add(_))
+    .evalTap((_, s) => stats.set(s))
+    .map(_._1)
