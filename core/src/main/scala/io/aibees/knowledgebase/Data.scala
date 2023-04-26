@@ -74,7 +74,7 @@ object PersistedData {
   )
 }
 
-type PersistedResult = ScrapeResult[PersistedData]
+type PersistedResult = ScrapeResult[RawScrapedData]
 
 final case class ScrapeResult[T](
     source: URI,

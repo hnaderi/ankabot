@@ -20,13 +20,6 @@ def Application(source: Path, result: Path)(using
     .through(Storage.write(result))
 } yield ()
 
-def process(fetch: Fetcher)(using Logger[IO]): Pipe[IO, Uri, PersistedResult] =
+def process(fetch: Fetcher)(using Logger[IO]): Pipe[IO, Uri, FetchResult] =
   _.parEvalMap(10)(fetch(_))
     .through(Statistics.calculate())
-    .evalMap(
-      _.traverse(traffik =>
-        IO.fromEither(
-          JsoupWebPage(traffik.body, traffik.url).map(PersistedData(traffik, _))
-        )
-      )
-    )
