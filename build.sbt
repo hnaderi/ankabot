@@ -23,7 +23,15 @@ def module(mname: String): Project => Project =
       libraryDependencies ++= Seq(
         "org.scalameta" %% "munit" % "0.7.29" % Test,
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
-      )
+      ),
+      assembly / assemblyJarName := s"$mname.jar",
+      assembly / assemblyMergeStrategy := {
+        case PathList("META-INF", "io.netty.versions.properties") =>
+          MergeStrategy.first
+        case x =>
+          val oldStrategy = (assembly / assemblyMergeStrategy).value
+          oldStrategy(x)
+      }
     )
 
 lazy val core = project
@@ -33,7 +41,8 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
       "org.typelevel" %% "cats-effect" % "3.4.9",
-      "org.http4s" %% "http4s-jdk-http-client" % "0.9.0",
+      "org.http4s" %% "http4s-netty-client" % "0.5.6",
+      "org.http4s" %% "http4s-ember-client" % "0.23.18",
       "io.circe" %% "circe-generic" % "0.14.5",
       "io.circe" %% "circe-parser" % "0.14.5",
       "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
@@ -42,6 +51,7 @@ lazy val core = project
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
     )
   )
+  .disablePlugins(AssemblyPlugin)
 
 lazy val scraper = module("scraper") {
   project.dependsOn(core)

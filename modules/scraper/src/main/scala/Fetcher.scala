@@ -10,6 +10,7 @@ import org.http4s.client.middleware.FollowRedirect
 import java.net.URI
 import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.*
+import io.odin.Logger
 
 type FetchResult = ScrapeResult[RawScrapedData]
 type Fetcher = Uri => IO[FetchResult]
@@ -48,11 +49,10 @@ object Fetcher {
         )
       }
       .timeout(timeoutDuration)
-      .attempt
-      .map {
-        case Right(value)              => Right(value)
-        case Left(_: TimeoutException) => Left(ScrapeError.Timeout)
-        case Left(_)                   => Left(ScrapeError.Failed)
+      .map(Right(_))
+      .recover {
+        case _: TimeoutException => Left(ScrapeError.Timeout)
+        case _                   => Left(ScrapeError.Failed)
       }
       .map(ScrapeResult(URI(url.toString), _))
   }

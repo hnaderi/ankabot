@@ -16,9 +16,9 @@ class ExternalLogger extends OdinLoggerBinder[IO] {
     Dispatcher.parallel[IO].allocated.unsafeRunSync()._1
 
   val loggers: PartialFunction[String, Logger[IO]] = {
-    case pkg if pkg.startsWith("org.http4s") =>
-      consoleLogger[IO](minLevel = Level.Info) // disable noisy external logs
+    case pkg if pkg.startsWith("io.aibees") =>
+      consoleLogger[IO](minLevel = Level.Debug)
     case _ => // if wildcard case isn't provided, default logger is no-op
-      consoleLogger[IO]()
+      consoleLogger[IO](minLevel = Level.Info)
   }
 }
