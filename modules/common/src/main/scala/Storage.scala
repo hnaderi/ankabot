@@ -9,9 +9,10 @@ import fs2.io.file.Path
 import io.circe.Json
 import io.circe.syntax.*
 import io.odin.Logger
-import org.http4s.Uri
 
 import Stream.*
+
+import java.net.URI
 
 object Storage {
 
@@ -23,7 +24,7 @@ object Storage {
     .map(io.circe.parser.decode[PersistedResult](_))
     .flatMap(fromEither(_))
 
-  def sources(path: Path)(using logger: Logger[IO]): Stream[IO, Uri] = Files[IO]
+  def sources(path: Path)(using logger: Logger[IO]): Stream[IO, URI] = Files[IO]
     .readAll(path)
     .through(fs2.text.utf8.decode)
     .through(fs2.text.lines)
@@ -37,12 +38,12 @@ object Storage {
       .through(fs2.text.utf8.encode)
       .through(Files[IO].writeAll(path))
 
-  private def toUri(using logger: Logger[IO]): Pipe[IO, String, Uri] =
+  private def toUri(using logger: Logger[IO]): Pipe[IO, String, URI] =
     _.flatMap { s =>
       val uri =
         if (s.startsWith("http"))
-        then Uri.fromString(s)
-        else Uri.fromString(s"http://$s")
+        then Either.catchNonFatal(URI(s))
+        else Either.catchNonFatal(URI(s"http://$s"))
 
       uri match {
         case Right(value) => emit(value)

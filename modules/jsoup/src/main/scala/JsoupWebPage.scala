@@ -82,6 +82,6 @@ object JsoupWebPage {
       }
       .map(new JsoupWebPage(_))
 
-  def apply(stored: RawScrapedData): Either[Throwable, JsoupWebPage] =
+  def apply(stored: FetchedData): Either[Throwable, JsoupWebPage] =
     apply(stored.body, stored.url)
 }

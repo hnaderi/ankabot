@@ -15,15 +15,15 @@ final case class Statistics(
     case Some(value) => Some(value + 1L)
   }
 
-  final def add(result: ScrapeResult[RawScrapedData]): Statistics =
+  final def add(result: FetchResult): Statistics =
     result.result match {
       case Right(value) =>
         copy(total = total + 1, ok = ok + 1, byStatus = addStatus(value.status))
-      case Left(ScrapeError.Timeout) =>
+      case Left(FetchError.Timeout) =>
         copy(total = total + 1, timedout = timedout + 1)
-      case Left(ScrapeError.Failed) =>
+      case Left(FetchError.Failed) =>
         copy(total = total + 1, failed = failed + 1)
-      case Left(ScrapeError.BadStatus(status, _)) =>
+      case Left(FetchError.BadStatus(status, _)) =>
         copy(total = total + 1, byStatus = addStatus(status))
     }
 }

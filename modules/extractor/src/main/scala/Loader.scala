@@ -17,17 +17,25 @@ object Loader extends IOApp {
   private def app(path: Path) = Storage.load(path).evalMap { data =>
     data.result.flatMap(JsoupWebPage(_)) match {
       case Right(page) =>
-        val result = Extractors
-          .all(page)
-          .contacts
-          .asJson
-          .noSpaces
+        IO.println(page.links.filter(interesting))
+//         val result = Extractors
+//           .all(page)
+//           .contacts
+//           .asJson
+//           .noSpaces
 
-        IO.println(s"""
-Extracted from ${data.source}
-${result}
-""")
+//         IO.println(s"""
+// Extracted from ${data.source}
+// ${result}
+// """)
       case Left(value) => IO.unit
     }
+  }
+
+  private def interesting(link: Link): Boolean = {
+    val text = link.text.toLowerCase
+    val url = link.value.toString
+
+    text.contains("contact") || text.contains("about")
   }
 }
