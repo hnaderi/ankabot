@@ -22,10 +22,10 @@ final class JsoupWebPage private (doc: Document) extends WebPage {
       .asScala
       .map(a =>
         try {
-          Link(a.text(), URI.create(a.absUrl("href"))).some
+          Link(a.text(), URI(a.absUrl("href"))).some
         } catch { case _ => None }
       )
-      .collect { case Some(l) if !l.text.isBlank && l.value.isAbsolute => l }
+      .collect { case Some(l) if l.value.isAbsolute => l }
       .toSet
 
   override lazy val title: String = doc.title()
