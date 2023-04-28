@@ -9,22 +9,18 @@ import fs2.io.file.Path
 import io.odin.Logger
 import java.net.URI
 import io.circe.syntax.*
+import scala.concurrent.duration.*
 
-def Application(source: Path, result: Path)(using
-    Logger[IO]
-): Stream[IO, Unit] = for {
+def Application(
+    sources: Stream[IO, URI],
+    timeout: FiniteDuration,
+    maxParallel: Int,
+    result: Path
+)(using logger: Logger[IO]): Stream[IO, Unit] = for {
   // fetcher <- eval(JClient()).map(Fetcher(_))
-  fetcher <- resource(EClient()).map(Fetcher(_))
-  sources = Storage.sources(source)
+  fetcher <- resource(EClient(timeout)).map(Fetcher(_, timeout))
   _ <- sources
-    .through(process(fetcher))
-    .through(Storage.write(result))
-} yield ()
-
-def process(
-    fetch: Fetcher
-)(using logger: Logger[IO]): Pipe[IO, URI, FetchResult] =
-  _.parEvalMap(10)(fetch(_))
+    .parEvalMap(maxParallel)(fetcher(_))
     .through(Statistics.calculate())
     .evalTap {
       case FetchResult(uri, Right(data)) =>
@@ -33,6 +29,8 @@ def process(
         }
       case _ => IO.unit
     }
+    .through(Storage.persist(result))
+} yield ()
 
 private def interesting(link: Link): Boolean = {
   val text = link.text.toLowerCase

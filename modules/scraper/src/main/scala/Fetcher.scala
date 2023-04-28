@@ -62,11 +62,11 @@ object Fetcher {
 
   def apply(
       client: Client[IO],
-      timeoutDuration: FiniteDuration = 5.seconds,
+      timeout: FiniteDuration = 5.seconds,
       maxRedirects: Int = 3
   ): Fetcher = simple(
     FollowRedirect(maxRedirects)(client),
-    timeoutDuration
+    timeout
   )
 
   private def buildUri(uri: URI): IO[Uri] =

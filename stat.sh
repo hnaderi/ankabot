@@ -4,7 +4,7 @@ FILE="$1"
 
 echo Total: "$(wc -l "$FILE")"
 
-jq ".result.Right.value.raw.status" "$FILE" | sort | uniq -c
+jq ".result.Right.value.status" "$FILE" | sort | uniq -c
 
 echo Timeout
 jq ".result.Left.value.Timeout | objects" "$FILE" | wc -l

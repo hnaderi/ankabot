@@ -36,7 +36,8 @@ lazy val common = module("common") {
         "co.fs2" %% "fs2-io" % "3.6.1",
         "io.circe" %% "circe-generic" % "0.14.5",
         "io.circe" %% "circe-parser" % "0.14.5",
-        "com.github.valskalla" %% "odin-slf4j" % "0.13.0"
+        "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
+        "com.monovore" %% "decline" % "2.4.1"
       )
     )
 }
