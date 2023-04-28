@@ -11,7 +11,7 @@ import java.net.URI
 import io.circe.syntax.*
 import scala.concurrent.duration.*
 
-def Application(
+def Scraper(
     sources: Stream[IO, URI],
     timeout: FiniteDuration,
     maxParallel: Int,

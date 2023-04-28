@@ -4,10 +4,10 @@ import cats.effect.IO
 import fs2.Stream
 import io.circe.syntax.*
 
-object Main extends CMDApp(RunOptions.cmd) {
+object Extractor {
 
-  override def app(opt: RunOptions): Stream[IO, Unit] =
-    opt.input.fold(Storage.stdinResults)(Storage.load).evalMap { data =>
+  def apply(input: Stream[IO, FetchResult]): Stream[IO, Unit] =
+    input.evalMap { data =>
       data.result.flatMap(JsoupWebPage(_)) match {
         case Right(page) =>
           // IO.println(page.links.filter(interesting))

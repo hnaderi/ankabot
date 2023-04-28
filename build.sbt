@@ -13,7 +13,7 @@ ThisBuild / developers := List(
 ThisBuild / fork := true
 ThisBuild / scalaVersion := "3.2.2"
 
-lazy val root = project.in(file(".")).aggregate(common, scraper, extractor)
+lazy val root = project.in(file(".")).aggregate(common, scraper, extractor, cli)
 
 def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))
@@ -23,8 +23,7 @@ def module(mname: String): Project => Project =
       libraryDependencies ++= Seq(
         "org.scalameta" %% "munit" % "0.7.29" % Test,
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
-      ),
-      assembly / assemblyJarName := s"$mname.jar"
+      )
     )
 
 lazy val common = module("common") {
@@ -59,7 +58,19 @@ lazy val scraper = module("scraper") {
       libraryDependencies ++= Seq(
         "org.http4s" %% "http4s-netty-client" % "0.5.6",
         "org.http4s" %% "http4s-ember-client" % "0.23.18"
-      ),
+      )
+    )
+}
+
+lazy val extractor = module("extractor") {
+  project.dependsOn(common, jsoup)
+}
+
+lazy val cli = module("cli") {
+  project
+    .dependsOn(scraper, extractor)
+    .settings(
+      assembly / assemblyJarName := s"kb.jar",
       assembly / assemblyMergeStrategy := {
         case PathList("META-INF", "io.netty.versions.properties") =>
           MergeStrategy.first
@@ -68,8 +79,4 @@ lazy val scraper = module("scraper") {
           oldStrategy(x)
       }
     )
-}
-
-lazy val extractor = module("extractor") {
-  project.dependsOn(common, jsoup)
 }
