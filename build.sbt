@@ -71,15 +71,20 @@ lazy val cli = module("cli") {
     .dependsOn(scraper, extractor)
     .settings(
       assembly / assemblyJarName := s"kb",
-      assembly / assemblyMergeStrategy := {
-        case PathList("META-INF", "io.netty.versions.properties") =>
-          MergeStrategy.first
-        case x =>
-          val oldStrategy = (assembly / assemblyMergeStrategy).value
-          oldStrategy(x)
-      },
       assemblyPrependShellScript := Some(
         sbtassembly.AssemblyPlugin.defaultUniversalScript(shebang = false)
-      )
+      ),
+      maintainer := "mail@hnaderi.dev",
+      executableScriptName := "kb",
+      packageName := "kb"
     )
+    .enablePlugins(JavaAppPackaging)
+}
+
+ThisBuild / assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", "io.netty.versions.properties") =>
+    MergeStrategy.first
+  case x =>
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
+    oldStrategy(x)
 }
