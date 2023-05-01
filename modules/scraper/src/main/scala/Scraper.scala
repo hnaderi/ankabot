@@ -6,9 +6,10 @@ import fs2.Pipe
 import fs2.Stream
 import fs2.Stream.*
 import fs2.io.file.Path
-import io.odin.Logger
-import java.net.URI
 import io.circe.syntax.*
+import io.odin.Logger
+
+import java.net.URI
 import scala.concurrent.duration.*
 
 def Scraper(
@@ -17,10 +18,9 @@ def Scraper(
     maxParallel: Int,
     result: Path
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
-  // fetcher <- eval(JClient()).map(Fetcher(_))
-  fetcher <- resource(EClient(timeout)).map(Fetcher(_, timeout))
+  fetcher <- resource(NClient(timeout)).map(Fetcher(_, timeout))
   _ <- sources
-    .parEvalMap(maxParallel)(fetcher(_))
+    .parEvalMapUnordered(maxParallel)(fetcher(_))
     .through(Statistics.calculate())
     .evalTap {
       case FetchResult(uri, Right(data)) =>
