@@ -15,14 +15,17 @@ import scala.concurrent.duration.*
 enum CLICommand {
   case Extract(
       output: Path,
-      input: Option[Path] = None,
+      inputs: List[Path] = Nil,
       maxParallel: Int = 10
   )
   case Scrape(
       output: Path,
-      input: Option[Path] = None,
+      input: List[Path] = Nil,
       timeout: FiniteDuration = 5.seconds,
       maxParallel: Int = 10
+  )
+  case Stat(
+      inputs: List[Path] = Nil
   )
 }
 
@@ -33,19 +36,22 @@ object CLICommand {
       Command("extract", "Extract data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.option[Path]("input", "Input file", "i").orNone,
+          Opts.arguments[Path]("input").orEmpty,
           Opts.option[Int]("max-parallel", "Max parallel", "n").withDefault(10),
         ).mapN(Extract(_, _, _))
       },
       Command("scrape", "Scrape sources") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.option[Path]("input", "Input file", "i").orNone,
+          Opts.arguments[Path]("input").orEmpty,
           Opts
             .option[FiniteDuration]("timeout", "Timeout", "t")
             .withDefault(5.seconds),
           Opts.option[Int]("max-parallel", "Max parallel", "n").withDefault(10),
         ).mapN(Scrape(_, _, _, _))
+      },
+      Command("stats", "Statistics for scraped data") {
+        Opts.arguments[Path]("input").orEmpty.map(Stat(_))
       }
     )
   )

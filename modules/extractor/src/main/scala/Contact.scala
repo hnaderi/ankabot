@@ -1,6 +1,7 @@
 package io.aibees.knowledgebase
 
 import io.circe.Codec
+import io.circe.derivation.ConfiguredEnumCodec
 
 import java.net.URI
 
@@ -17,4 +18,8 @@ enum SocialNetwork {
     Twitter,
     Facebook,
     Youtube,
+}
+
+object SocialNetwork {
+  given Codec[SocialNetwork] = ConfiguredEnumCodec.derive()
 }

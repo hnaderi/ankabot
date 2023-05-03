@@ -3,8 +3,11 @@ package io.aibees.knowledgebase
 import cats.*
 import cats.syntax.all.*
 import io.circe.Codec
+import io.circe.Decoder
+import io.circe.Encoder
 
 import java.net.URI
+import scala.concurrent.duration.*
 
 opaque type PageSource <: URI = URI
 
@@ -61,7 +64,17 @@ final case class PersistedData(
 
 type PersistedResult = FetchResult
 
+private given Encoder[FiniteDuration] = Encoder[Long].contramap(_.toMillis)
+private given Decoder[FiniteDuration] = Decoder[Long].map(_.millis)
+
 final case class FetchResult(
     source: URI,
-    result: Either[FetchError, FetchedData]
+    result: Either[FetchError, FetchedData],
+    time: FiniteDuration
+) derives Codec.AsObject
+
+final case class WebsiteData(
+    time: FiniteDuration,
+    home: FetchResult,
+    children: Seq[FetchResult] = Nil
 ) derives Codec.AsObject

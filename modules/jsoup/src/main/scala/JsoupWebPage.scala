@@ -12,7 +12,7 @@ import java.net.URI
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
-final class JsoupWebPage private (doc: Document) extends WebPage {
+final class JsoupWebPage private (doc: Document, val address:URI) extends WebPage {
 
   override lazy val scripts: Set[String] = select(doc, "script", "src")
 
@@ -80,7 +80,7 @@ object JsoupWebPage {
         d.setBaseUri(base.toString)
         d
       }
-      .map(new JsoupWebPage(_))
+      .map(new JsoupWebPage(_, base))
 
   def apply(stored: FetchedData): Either[Throwable, JsoupWebPage] =
     apply(stored.body, stored.url)

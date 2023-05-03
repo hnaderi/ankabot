@@ -1,6 +1,9 @@
 package io.aibees.knowledgebase
 
+import java.net.URI
+
 trait WebPage {
+  def address: URI
   def title: String
   def scripts: Set[String]
   def styles: Set[String]
@@ -23,5 +26,13 @@ object WebPage {
         comments = page.comments
       )
     )
+
+    def childPages: Set[URI] = {
+      val base = page.address.resolve("/")
+      page.links
+        .map(l => base.relativize(l.value))
+        .filterNot(uri => uri.isAbsolute || uri.getPath.isBlank)
+        .map(base.resolve)
+    }
   }
 }

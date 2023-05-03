@@ -9,7 +9,9 @@ import org.http4s.ember.client.EmberClientBuilder
 
 object NClient {
   def apply(timeout: FiniteDuration = 5.seconds): Resource[IO, Client[IO]] =
-    NettyClientBuilder[IO].withIdleTimeout(timeout).resource
+    NettyClientBuilder[IO].withProxyFromSystemProperties
+      .withIdleTimeout(timeout)
+      .resource
 }
 
 object EClient {

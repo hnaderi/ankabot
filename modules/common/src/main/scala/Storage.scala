@@ -6,6 +6,8 @@ import fs2.Pipe
 import fs2.Stream
 import fs2.io.file.Files
 import fs2.io.file.Path
+import io.circe.Decoder
+import io.circe.Encoder
 import io.circe.Json
 import io.circe.syntax.*
 import io.odin.Logger
@@ -16,17 +18,17 @@ import Stream.*
 
 object Storage {
 
-  def load(path: Path): Stream[IO, FetchResult] =
+  def load[T: Decoder](path: Path): Stream[IO, T] =
     read(path).through(decodeResult)
 
   private val stdin = fs2.io.stdin[IO](4096).through(fs2.text.utf8.decode)
 
-  def stdinResults: Stream[IO, FetchResult] = stdin.through(decodeResult)
+  def stdinResults[T: Decoder]: Stream[IO, T] = stdin.through(decodeResult)
 
-  private def decodeResult: Pipe[IO, String, PersistedResult] =
+  private def decodeResult[T: Decoder]: Pipe[IO, String, T] =
     _.through(fs2.text.lines)
       .filterNot(_.isBlank())
-      .map(io.circe.parser.decode[PersistedResult](_))
+      .map(io.circe.parser.decode[T](_))
       .flatMap(fromEither(_))
 
   def sources(path: Path)(using Logger[IO]): Stream[IO, URI] =
@@ -41,10 +43,17 @@ object Storage {
       .evalTap(logger.debug(_))
       .through(toUri)
 
-  def persist(path: Path): Pipe[IO, PersistedResult, Nothing] =
+  def persist[T: Encoder](path: Path): Pipe[IO, T, Nothing] =
     _.map(_.asJson.noSpaces)
       .intersperse("\n")
       .through(write(path))
+
+  // def persistCSV[T](path: Path)(using
+  //     CsvRowEncoder[T, String]
+  // ): Pipe[IO, T, Nothing] =
+  //   _.through(encodeUsingFirstHeaders(fullRows = true))
+  //     .intersperse("\n")
+  //     .through(write(path))
 
   private def isGzip(path: Path) = path.extName.toLowerCase.endsWith(".gz")
   private def write(path: Path): Pipe[IO, String, Nothing] = in => {

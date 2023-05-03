@@ -18,17 +18,33 @@ def Scraper(
     maxParallel: Int,
     result: Path
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
-  fetcher <- resource(NClient(timeout)).map(Fetcher(_, timeout))
+  fetcher <- resource(NClient(timeout)).evalMap(Fetcher(_, timeout))
   _ <- sources
-    .parEvalMapUnordered(maxParallel)(fetcher(_))
-    .through(Statistics.calculate())
-    .evalTap {
-      case FetchResult(uri, Right(data)) =>
-        IO.fromEither(JsoupWebPage(data)).flatMap { wp =>
-          logger.info(wp.links.filter(interesting).asJson)
+    .parEvalMapUnordered(maxParallel)(src =>
+      fetcher(src).flatMap { home =>
+        home.result match {
+          case Left(err) => WebsiteData(time = home.time, home = home).pure
+          case Right(result) =>
+            IO(JsoupWebPage(result)).flatMap {
+              case Left(err) =>
+                logger
+                  .error(s"Couldn't parse fetched data for ${result.url}!", err)
+                  .as(WebsiteData(time = home.time, home = home))
+              case Right(homePage) =>
+                val children = homePage.childPages.toVector
+                logger.info(
+                  s"Found ${children.size} children pages in ${result.url}"
+                ) >>
+                  children
+                    .parUnorderedTraverse(fetcher)
+                    .map(ch =>
+                      WebsiteData(time = home.time, home = home, children = ch)
+                    )
+            }
         }
-      case _ => IO.unit
-    }
+      }
+    )
+    .through(Statistics.calculateNested())
     .through(Storage.persist(result))
 } yield ()
 
