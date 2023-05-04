@@ -1,6 +1,7 @@
 package io.aibees.knowledgebase
 
 import cats.effect.IO
+import cats.effect.syntax.all.*
 import cats.syntax.all.*
 import fs2.Pipe
 import fs2.Stream
@@ -18,6 +19,7 @@ def Scraper(
     maxParallel: Int,
     result: Path
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
+  metrics <- Metrics.printer()
   fetcher <- resource(NClient(timeout)).evalMap(Fetcher(_, timeout))
   _ <- sources
     .parEvalMapUnordered(maxParallel)(src =>
@@ -37,14 +39,19 @@ def Scraper(
                 ) >>
                   children
                     .parUnorderedTraverse(fetcher)
-                    .map(ch =>
-                      WebsiteData(time = home.time, home = home, children = ch)
+                    .timed
+                    .map((childTime, ch) =>
+                      WebsiteData(
+                        time = home.time + childTime,
+                        home = home,
+                        children = ch
+                      )
                     )
             }
         }
       }
     )
-    .through(Statistics.calculateNested())
+    .evalTap(metrics.add)
     .through(Storage.persist(result))
 } yield ()
 
