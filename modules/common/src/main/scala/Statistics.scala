@@ -20,9 +20,9 @@ final case class Statistics(
   }
   private def update(
       result: FetchResult,
-      ok: Long = 0,
-      failed: Long = 0,
-      timedout: Long = 0,
+      ok: Long = ok,
+      failed: Long = failed,
+      timedout: Long = timedout,
       status: Int = -1
   ): Statistics = copy(
     total = total + 1,
