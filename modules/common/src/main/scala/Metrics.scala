@@ -23,9 +23,11 @@ object Metrics {
   )(using logger: Logger[IO]): fs2.Stream[IO, Metrics] =
     for {
       stats <- fs2.Stream.eval(apply())
+      print = stats.read.flatMap(logger.info)
       _ <- fs2.Stream
         .awakeEvery[IO](interval)
-        .foreach(_ => stats.read.flatMap(logger.info))
+        .foreach(_ => print)
         .spawn
+        .onFinalize(logger.info("Terminated") >> print)
     } yield stats
 }

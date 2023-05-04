@@ -6,7 +6,7 @@ import fs2.Stream
 import io.odin.Logger
 
 object Main extends CMDApp(CLICommand()) {
-  private given Logger[IO] = io.odin.consoleLogger[IO]()
+  protected given logger: Logger[IO] = io.odin.consoleLogger[IO]()
 
   override def app(cmd: CLICommand): Stream[IO, Unit] = cmd match {
     case CLICommand.Extract(output, inputs, maxParallel) =>
