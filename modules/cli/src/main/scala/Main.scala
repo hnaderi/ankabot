@@ -34,7 +34,12 @@ object Main extends CMDApp(CLICommand()) {
         backend = backend,
         output
       )
-    case CLICommand.Stat(inputs) => ???
+    case CLICommand.Sample(inputs, output) =>
+      val input =
+        if inputs.isEmpty then Storage.stdinResults[WebsiteData]
+        else Stream.emits(inputs).flatMap(Storage.load[WebsiteData])
+
+      Sampling(input, output)
 
   }
 

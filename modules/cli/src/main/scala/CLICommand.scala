@@ -27,8 +27,9 @@ enum CLICommand {
       maxChildren: Int = 0,
       backend: ScrapeBackend = ScrapeBackend.Ember
   )
-  case Stat(
-      inputs: List[Path] = Nil
+  case Sample(
+      inputs: List[Path] = Nil,
+      output: Path
   )
 }
 
@@ -67,8 +68,11 @@ object CLICommand {
             .withDefault(ScrapeBackend.Ember)
         ).mapN(Scrape(_, _, _, _, _, _, _))
       },
-      Command("stats", "Statistics for scraped data") {
-        Opts.arguments[Path]("input").orEmpty.map(Stat(_))
+      Command("sample", "Sample scraped data failures") {
+        (
+          Opts.arguments[Path]("input").orEmpty,
+          Opts.option[Path]("output", "Output file", "o"),
+        ).mapN(Sample(_, _))
       }
     )
   )
