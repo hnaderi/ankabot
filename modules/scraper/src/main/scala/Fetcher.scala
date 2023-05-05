@@ -1,6 +1,7 @@
 package io.aibees.knowledgebase
 
 import cats.effect.IO
+import cats.effect.std.Semaphore
 import cats.effect.syntax.all.*
 import io.odin.Logger
 import org.http4s.Header
@@ -66,16 +67,20 @@ object Fetcher {
 
   def simple(
       client: Client[IO],
-      timeout: FiniteDuration = 5.seconds
+      timeout: FiniteDuration = 5.seconds,
+      maxConcurrent: Int = 30
   )(using logger: Logger[IO]): IO[Fetcher] =
-    client
-      .expect[String]("https://api.my-ip.io/ip")
-      .attempt
-      .flatMap {
-        case Right(ip) => logger.info(s"Fetching from IP: $ip")
-        case Left(err) => logger.error("Cannot determine external IP!", err)
-      }
-      .as(create(client, timeout))
+    Semaphore[IO](maxConcurrent).flatMap { sem =>
+      val fetch = create(client, timeout)
+      client
+        .expect[String]("https://api.my-ip.io/ip")
+        .attempt
+        .flatMap {
+          case Right(ip) => logger.info(s"Fetching from IP: $ip")
+          case Left(err) => logger.error("Cannot determine external IP!", err)
+        }
+        .as(uri => sem.permit.use(_ => fetch(uri)))
+    }
 
   def apply(
       client: Client[IO],

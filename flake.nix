@@ -8,16 +8,16 @@
   outputs = { self, nixpkgs, flake-utils, typelevel-nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlay = final: prev: { jdk = prev.jdk17; };
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ typelevel-nix.overlay overlay ];
+          overlays = [ typelevel-nix.overlay ];
         };
 
       in {
         devShell = pkgs.devshell.mkShell {
           imports = [ typelevel-nix.typelevelShell ];
           name = "knowledge-base-shell";
+          typelevelShell = { jdk.package = pkgs.temurin-bin-11; };
         };
       });
 }

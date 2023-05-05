@@ -11,15 +11,16 @@ object Main extends CMDApp(CLICommand()) {
   override def app(cmd: CLICommand): Stream[IO, Unit] = cmd match {
     case CLICommand.Extract(output, inputs, maxParallel) =>
       val input =
-        if inputs.isEmpty then Storage.stdinResults[FetchResult]
-        else Stream.emits(inputs).flatMap(Storage.load[FetchResult])
+        if inputs.isEmpty then Storage.stdinResults[WebsiteData]
+        else Stream.emits(inputs).flatMap(Storage.load[WebsiteData])
 
       Extractor(
         input = input,
         output = output,
         maxParallel = maxParallel
       )
-    case CLICommand.Scrape(output, inputs, timeout, maxParallel) =>
+    case cmd: CLICommand.Scrape =>
+      import cmd.*
       val input =
         if inputs.isEmpty then Storage.stdinSources
         else Stream.emits(inputs).flatMap(Storage.sources)
@@ -27,7 +28,10 @@ object Main extends CMDApp(CLICommand()) {
       Scraper(
         input,
         timeout,
-        maxParallel,
+        maxConcurrentPage = maxConcurrentPage,
+        maxConcurrentFetch = maxConcurrentFetch,
+        maxChildren = maxChildren,
+        backend = backend,
         output
       )
     case CLICommand.Stat(inputs) => ???

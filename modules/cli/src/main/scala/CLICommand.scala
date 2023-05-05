@@ -20,9 +20,12 @@ enum CLICommand {
   )
   case Scrape(
       output: Path,
-      input: List[Path] = Nil,
+      inputs: List[Path] = Nil,
       timeout: FiniteDuration = 5.seconds,
-      maxParallel: Int = 10
+      maxConcurrentPage: Int = 10,
+      maxConcurrentFetch: Int = 30,
+      maxChildren: Int = 0,
+      backend: ScrapeBackend = ScrapeBackend.Ember
   )
   case Stat(
       inputs: List[Path] = Nil
@@ -47,8 +50,22 @@ object CLICommand {
           Opts
             .option[FiniteDuration]("timeout", "Timeout", "t")
             .withDefault(5.seconds),
-          Opts.option[Int]("max-parallel", "Max parallel", "n").withDefault(10),
-        ).mapN(Scrape(_, _, _, _))
+          Opts
+            .option[Int]("max-page", "Max concurrent page", "n")
+            .withDefault(10),
+          Opts
+            .option[Int]("max-fetch", "Max concurrent fetch", "nf")
+            .withDefault(30),
+          Opts
+            .option[Int](
+              "max-children",
+              "How many child pages to get at maximum"
+            )
+            .withDefault(0),
+          Opts
+            .option[ScrapeBackend]("backend", "Scrape backend to use")
+            .withDefault(ScrapeBackend.Ember)
+        ).mapN(Scrape(_, _, _, _, _, _, _))
       },
       Command("stats", "Statistics for scraped data") {
         Opts.arguments[Path]("input").orEmpty.map(Stat(_))

@@ -12,31 +12,37 @@ import java.net.URI
 
 object Extractor {
 
-  def apply(input: Stream[IO, FetchResult], output: Path, maxParallel: Int)(
+  def apply(input: Stream[IO, WebsiteData], output: Path, maxParallel: Int)(
       using logger: Logger[IO]
-  ): Stream[IO, Unit] =
-    input
+  ): Stream[IO, Unit] = for {
+    metrics <- Metrics.printer()
+    _ <- input
       .parEvalMapUnordered(maxParallel) { fetched =>
-        fetched.result match {
+        fetched.home.result match {
           case Left(err) =>
-            logger.info(s"Skipping ${fetched.source} due to $err").as(None)
+            logger.info(s"Skipping ${fetched.home.source} due to $err").as(None)
           case Right(result) =>
             IO(JsoupWebPage(result)).flatMap {
               case Left(err) =>
                 logger
-                  .error(s"Couldn't parse page for ${fetched.source}", err)
+                  .error(s"Couldn't parse page for ${fetched.home.source}", err)
                   .as(None)
               case Right(page) =>
-                ExperimentData(
-                  source = fetched.source,
-                  contacts = Extractors.all(page).contacts,
-                  children = page.childPages
-                ).some.pure
+                metrics
+                  .add(fetched.home, page.childPages.size)
+                  .as(
+                    ExperimentData(
+                      source = fetched.home.source,
+                      contacts = Extractors.all(page).contacts,
+                      children = page.childPages
+                    ).some
+                  )
             }
         }
       }
       .unNone
       .through(Storage.persist(output))
+  } yield ()
 
   private def interesting(link: Link): Boolean = {
     val text = link.text.toLowerCase
