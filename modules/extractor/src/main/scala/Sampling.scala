@@ -20,14 +20,18 @@ object Sampling {
   def apply(input: Stream[IO, WebsiteData], output: Path)(using
       logger: Logger[IO]
   ): Stream[IO, Unit] = input
+    .parEvalMapUnbounded(d =>
+      IO { (d, d.home.result.flatMap(JsoupWebPage(_))) }
+    )
     .scan(
       DataSample[SampleCategories, URI](100)(
         SampleCategories.values.toSeq: _*
       )
-    ) { case (sample, data) =>
+    ) { case (sample, (data, result)) =>
       import data.home.source
+      val childCount = result.map(_.childPages.size).getOrElse(0)
 
-      val childAdded = data.children.size match {
+      val childAdded = childCount match {
         case 0 => sample.add(SampleCategories.NoChild, source)
         case n if n >= 100 =>
           sample.add(SampleCategories.`100+ Children`, source)
