@@ -72,7 +72,7 @@ ${st.byStatus.map((k, v) => s"  $k: $v").mkString("\n")}
 Total: ${st.total}
 Fetch time:
   total: ${st.totalTime}
-  avg:   ${st.totalTime / st.total}
+  avg:   ${if (st.total == 0) "N/A" else st.totalTime / st.total}
 =======================
 ======== Times ========
 ${st.timeDist}
