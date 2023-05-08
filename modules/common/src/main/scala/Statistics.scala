@@ -61,7 +61,13 @@ final case class Statistics(
 }
 
 object Statistics {
-  given Show[Statistics] = Show.show(st => s"""Statistics:
+  given Show[Statistics] = Show.show { st =>
+    val avg: String =
+      if (st.total == 0)
+      then "N/A"
+      else (st.totalTime / st.total).toString
+
+    s"""Statistics:
 ====== Requests =======
 Overall:
   OK: ${st.ok}
@@ -72,7 +78,7 @@ ${st.byStatus.map((k, v) => s"  $k: $v").mkString("\n")}
 Total: ${st.total}
 Fetch time:
   total: ${st.totalTime}
-  avg:   ${if (st.total == 0) "N/A" else st.totalTime / st.total}
+  avg:   $avg
 =======================
 ======== Times ========
 ${st.timeDist}
@@ -80,7 +86,8 @@ ${st.timeDist}
 ====== Children =======
 ${st.childPageDist}
 =======================
-""")
+"""
+  }
 }
 
 trait Distribution[T] {
@@ -117,28 +124,30 @@ object Distribution {
 
     private final val progressLength = 30
     override def print: String = {
-      val totalCount = counts.sum.toDouble
+      counts.sum.toDouble match {
+        case 0 => "No data available yet!"
+        case totalCount =>
+          val bars = buckets
+            .zip(counts)
+            .map { (t, c) =>
+              val ratio = c / totalCount
+              val percent = BigDecimal(ratio * 100)
+                .setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                .toDouble
+              val progress = "||" * (ratio * progressLength).toInt
+              val empty = ".." * (progressLength - ratio * progressLength).toInt
 
-      val bars = buckets
-        .zip(counts)
-        .map { (t, c) =>
-          val ratio = c / totalCount
-          val percent = BigDecimal(ratio * 100)
-            .setScale(2, BigDecimal.RoundingMode.HALF_UP)
-            .toDouble
-          val progress = "||" * (ratio * progressLength).toInt
-          val empty = ".." * (progressLength - ratio * progressLength).toInt
+              s"$t :\t[$progress$empty] $c ($percent%)"
+            }
+            .mkString("\n")
 
-          s"$t :\t[$progress$empty] $c ($percent%)"
-        }
-        .mkString("\n")
-
-      s"""$bars
+          s"""$bars
 Min: ${optShow(min)} -> Max: ${optShow(max)}
 Total count: $totalCount
 Avg: ${L.fromLong(total / totalCount.toLong).show}
 Total: ${L.fromLong(total).show}
 """
+      }
     }
 
     override def toString(): String = print
