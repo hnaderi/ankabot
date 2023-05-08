@@ -22,7 +22,7 @@ object Fetcher {
   private def create(
       client: Client[IO],
       timeoutDuration: FiniteDuration
-  ): Fetcher =
+  )(using logger: Logger[IO]): Fetcher =
     juri =>
       buildUri(juri)
         .flatMap { uri =>
@@ -37,9 +37,16 @@ object Fetcher {
           client
             .run(req)
             .use { resp =>
+              val baseURI = FollowRedirect
+                .getRedirectUris(resp)
+                .lastOption
+                .map(_.toString)
+                .map(URI.create)
+                .getOrElse(juri)
+
               resp.bodyText.compile.string.timed.map((time, body) =>
                 FetchedData(
-                  url = juri,
+                  url = baseURI,
                   resp.headers.headers.map(h => (h.name.toString, h.value)),
                   resp.status.code,
                   HttpVersion(resp.httpVersion.major, resp.httpVersion.minor),
