@@ -48,15 +48,9 @@ object Storage {
       .intersperse("\n")
       .through(write(path))
 
-  // def persistCSV[T](path: Path)(using
-  //     CsvRowEncoder[T, String]
-  // ): Pipe[IO, T, Nothing] =
-  //   _.through(encodeUsingFirstHeaders(fullRows = true))
-  //     .intersperse("\n")
-  //     .through(write(path))
-
   private def isGzip(path: Path) = path.extName.toLowerCase.endsWith(".gz")
-  private def write(path: Path): Pipe[IO, String, Nothing] = in => {
+
+  def write(path: Path): Pipe[IO, String, Nothing] = in => {
     val text = in.through(fs2.text.utf8.encode)
     val out =
       if isGzip(path)
@@ -64,7 +58,7 @@ object Storage {
       else text
     out.through(Files[IO].writeAll(path))
   }
-  private def read(path: Path): Stream[IO, String] = {
+  def read(path: Path): Stream[IO, String] = {
     val in = Files[IO].readAll(path)
     val text =
       if isGzip(path)

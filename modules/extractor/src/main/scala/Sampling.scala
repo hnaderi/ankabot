@@ -1,10 +1,14 @@
 package io.aibees.knowledgebase
 
 import cats.Show
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.syntax.all.*
 import fs2.Stream
 import fs2.Stream.*
+import fs2.data.csv.CsvRowEncoder
+import fs2.data.csv.Row
+import fs2.data.csv.RowEncoder
 import fs2.io.file.Path
 import io.circe.Codec
 import io.circe.KeyEncoder
@@ -56,8 +60,16 @@ object Sampling {
       case (a, _) if a.hasFinished => a
       case (a, None)               => a
     }
-    .map(_.data)
-    .through(Storage.persist(output))
+    .flatMap { sample =>
+      val rows = sample.data.toVector.flatMap((cat, vs) =>
+        vs.map(v => Row(NonEmptyList.of(cat.toString, v.toString)))
+      )
+      emits(rows)
+    }
+    .through(
+      fs2.data.csv.encodeGivenHeaders(NonEmptyList.of("category", "url"))
+    )
+    .through(Storage.write(output))
 
   final case class SampledDataResults(
       timeout: Set[URI] = Set.empty
