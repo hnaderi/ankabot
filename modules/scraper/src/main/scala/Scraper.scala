@@ -44,7 +44,7 @@ def Scraper(
                   ) >>
                   metrics.add(data).as(data)
               case Right(homePage) =>
-                val children = homePage.childPages.toVector
+                val children = homePage.childPages.toList
                 for {
                   _ <- logger.info(
                     s"Found ${children.size} child pages in ${result.url}"

@@ -50,14 +50,16 @@ object Fetcher {
                   resp.headers.headers.map(h => (h.name.toString, h.value)),
                   resp.status.code,
                   HttpVersion(resp.httpVersion.major, resp.httpVersion.minor),
-                  resp.cookies.map(rc =>
-                    Cookie(
-                      name = rc.name,
-                      content = rc.content,
-                      domain = rc.domain,
-                      path = rc.path
+                  resp.cookies
+                    .map(rc =>
+                      Cookie(
+                        name = rc.name,
+                        content = rc.content,
+                        domain = rc.domain,
+                        path = rc.path
+                      )
                     )
-                  ),
+                    .toSet,
                   body
                 )
               )

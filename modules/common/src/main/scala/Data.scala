@@ -34,7 +34,7 @@ final case class FetchedData(
     headers: List[(String, String)], // TODO case insensitive
     status: Int,
     httpVersion: HttpVersion,
-    cookies: List[Cookie],
+    cookies: Set[Cookie],
     body: String
 ) derives Codec.AsObject
 
@@ -76,5 +76,5 @@ final case class FetchResult(
 final case class WebsiteData(
     time: FiniteDuration,
     home: FetchResult,
-    children: Seq[FetchResult] = Nil
+    children: List[FetchResult] = Nil
 ) derives Codec.AsObject
