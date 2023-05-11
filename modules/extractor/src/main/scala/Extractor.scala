@@ -16,7 +16,6 @@ object Extractor {
   def apply(input: Stream[IO, WebsiteData], output: Path, maxParallel: Int)(
       using logger: Logger[IO]
   ): Stream[IO, Unit] = for {
-    metrics <- Metrics.printer()
     patterns <- eval(Technology.load)
     matcher = AllMatchers(patterns)
     _ <- input
@@ -27,16 +26,12 @@ object Extractor {
           .flatMap {
             case Nil => logger.info(s"Skipping ${fetched.home.source}").as(None)
             case home :: children =>
-              metrics
-                .add(fetched.home, home.page.childPages.size)
-                .as(
-                  ExperimentData(
-                    source = fetched.home.source,
-                    contacts = Extractors.all(home.page).contacts,
-                    technologies = matcher(home) ++ children.flatMap(matcher),
-                    children = home.page.childPages
-                  ).some
-                )
+              ExperimentData(
+                source = fetched.home.source,
+                contacts = Extractors.all(home.page).contacts,
+                technologies = matcher(home) ++ children.flatMap(matcher),
+                children = home.page.childPages
+              ).some.pure
           }
       }
       .unNone

@@ -23,7 +23,7 @@ def Scraper(
     backend: ScrapeBackend,
     result: Path
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
-  metrics <- Metrics.printer()
+  metrics <- ScrapeMetrics.printer()
   fetcher <- resource(backend match {
     case ScrapeBackend.Ember => EClient(timeout)
     case ScrapeBackend.Netty => NClient(timeout)
