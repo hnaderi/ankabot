@@ -2,6 +2,8 @@ package io.aibees.knowledgebase
 
 import munit.FunSuite
 
+import extractors.ContactExtractors
+
 class ExtractionSuite extends FunSuite {
   test("Matches Phone numbers from text") {
     val examples = Seq(
@@ -19,7 +21,7 @@ class ExtractionSuite extends FunSuite {
     )
 
     examples.foreach(s =>
-      assertEquals(Extractors.phonesIn(s).toSeq, Seq(Contact.Phone(s)))
+      assertEquals(ContactExtractors.phonesIn(s).toSeq, Seq(Contact.Phone(s)))
     )
   }
 
@@ -40,6 +42,8 @@ class ExtractionSuite extends FunSuite {
       "22 04 23"
     )
 
-    examples.foreach(s => assertEquals(Extractors.phonesIn(s).toSeq, Nil))
+    examples.foreach(s =>
+      assertEquals(ContactExtractors.phonesIn(s).toSeq, Nil)
+    )
   }
 }

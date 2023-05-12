@@ -13,7 +13,7 @@ final case class Statistics(
     byStatus: Map[Int, Long] = Map.empty,
     totalTime: FiniteDuration = Duration.Zero,
     timeDist: Distribution[FiniteDuration] =
-      Distribution(100.millis, 500.millis, 10),
+      TimeDistribution.millis(100, 500, 10),
     childPageDist: Distribution[Long] =
       Distribution.buckets(0, 1, 5, 10, 50, 100)
 ) {

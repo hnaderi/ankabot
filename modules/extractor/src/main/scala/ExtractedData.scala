@@ -20,4 +20,4 @@ object ExtractedData {
   }
 }
 
-type DataExtractor = WebPage => ExtractedData
+type DataExtractor = ToExtract => ExtractedData

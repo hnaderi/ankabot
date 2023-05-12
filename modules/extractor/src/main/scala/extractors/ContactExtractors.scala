@@ -1,13 +1,14 @@
 package io.aibees.knowledgebase
+package extractors
 
 import cats.syntax.all.*
 
 import java.net.URI
 
-object Extractors {
+object ContactExtractors {
   val links: DataExtractor = in =>
     ExtractedData(
-      contacts = in.links.collect { case IsContact(value) => value }
+      contacts = in.page.links.collect { case IsContact(value) => value }
     )
 
   private object IsContact {
@@ -55,10 +56,10 @@ object Extractors {
     """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- ]?)+""".r
   val body: DataExtractor = in =>
     ExtractedData(
-      contacts = in.texts
+      contacts = in.page.texts
         .flatMap(email.findAllIn(_))
         .map(s => Contact.Email(s.trim))
-        .toSet ++ in.texts.flatMap(phonesIn).toSet
+        .toSet ++ in.page.texts.flatMap(phonesIn).toSet
     )
 
   private[knowledgebase] def phonesIn(str: String): Iterator[Contact] =

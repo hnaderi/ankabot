@@ -15,8 +15,7 @@ import scala.concurrent.duration.*
 enum CLICommand {
   case Extract(
       output: Path,
-      inputs: List[Path] = Nil,
-      maxParallel: Int = 10
+      inputs: List[Path] = Nil
   )
   case Scrape(
       output: Path,
@@ -40,9 +39,8 @@ object CLICommand {
       Command("extract", "Extract data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.arguments[Path]("input").orEmpty,
-          Opts.option[Int]("max-parallel", "Max parallel", "n").withDefault(10),
-        ).mapN(Extract(_, _, _))
+          Opts.arguments[Path]("input").orEmpty
+        ).mapN(Extract(_, _))
       },
       Command("scrape", "Scrape sources") {
         (
@@ -55,7 +53,7 @@ object CLICommand {
             .option[Int]("max-page", "Max concurrent page", "n")
             .withDefault(10),
           Opts
-            .option[Int]("max-fetch", "Max concurrent fetch", "nf")
+            .option[Int]("max-fetch", "Max concurrent fetch")
             .withDefault(30),
           Opts
             .option[Int](
