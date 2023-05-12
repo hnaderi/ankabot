@@ -21,18 +21,25 @@ final case class ExtractionMetrics(
     contacts: Distribution[Long] = Distribution.buckets(0, 1, 5, 10, 100),
     contactsAll: Distribution[Long] = Distribution.buckets(0, 1, 5, 10, 100),
     technologies: Distribution[Long] = Distribution.buckets(0, 1, 5, 10, 100),
-    technologiesAll: Distribution[Long] = Distribution.buckets(0, 1, 5, 10, 100)
+    technologiesAll: Distribution[Long] =
+      Distribution.buckets(0, 1, 5, 10, 100),
+    time: Distribution[FiniteDuration] = TimeDistribution.millis(10, 50, 10),
+    timeAll: Distribution[FiniteDuration] = TimeDistribution.millis(0, 200, 10)
 ) {
   def add(
       homeContacts: Set[Contact],
       allContacts: Set[Contact],
       homeTechnologies: Set[String],
-      allTechnologies: Set[String]
+      allTechnologies: Set[String],
+      homeTime: FiniteDuration,
+      allTime: FiniteDuration
   ): ExtractionMetrics = ExtractionMetrics(
     contacts = contacts.add(homeContacts.size),
     contactsAll = contactsAll.add(allContacts.size),
     technologies = technologies.add(homeTechnologies.size),
-    technologiesAll = technologiesAll.add(allTechnologies.size)
+    technologiesAll = technologiesAll.add(allTechnologies.size),
+    time = time.add(homeTime),
+    timeAll = timeAll.add(allTime)
   )
 }
 
@@ -43,10 +50,14 @@ Statistics:
 ${em.contacts}
 ======== Technologies Home =======
 ${em.technologies}
+======== Time Home ===========
+${em.time}
 ======== Contacts All ===========
 ${em.contactsAll}
 ======== Technologies All =======
 ${em.technologiesAll}
+======== Time All =======
+${em.timeAll}
 =============================
 """)
 }
@@ -58,16 +69,18 @@ final class ExtractionMetricsCollector private (
       contactsHome: Set[Contact],
       contactsAll: Set[Contact],
       technologiesHome: Set[String],
-      technologiesAll: Set[String]
-      // timeAvg:FiniteDuration,
-      // timeAll:FiniteDuration,
+      technologiesAll: Set[String],
+      timeHome: FiniteDuration,
+      timeAll: FiniteDuration
   ): IO[Unit] =
     stats.update(
       _.add(
         homeContacts = contactsHome,
         allContacts = contactsAll,
         homeTechnologies = technologiesHome,
-        allTechnologies = technologiesAll
+        allTechnologies = technologiesAll,
+        homeTime = timeHome,
+        allTime = timeAll
       )
     )
 

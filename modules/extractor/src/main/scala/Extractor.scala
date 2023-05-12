@@ -24,9 +24,9 @@ object Extractor {
         for {
           home <- evals(getPage(fetched.home))
           children <- eval(fetched.children.traverse(getPage).map(_.flatten))
-          homeX <- eval(extractor.io(home))
-          allX <- eval(children.traverse(extractor.io)).map(
-            _.combineAll.combine(homeX)
+          (homeTime, homeX) <- eval(extractor.io(home).timed)
+          (allTime, allX) <- eval(children.traverse(extractor.io).timed).map(
+            (t, ch) => (t + homeTime, ch.combineAll.combine(homeX))
           )
           _ <- eval(
             metrics
@@ -34,7 +34,9 @@ object Extractor {
                 contactsHome = homeX.contacts,
                 contactsAll = allX.contacts,
                 technologiesHome = homeX.technologies,
-                technologiesAll = allX.technologies
+                technologiesAll = allX.technologies,
+                timeHome = homeTime,
+                timeAll = allTime
               )
           )
 
