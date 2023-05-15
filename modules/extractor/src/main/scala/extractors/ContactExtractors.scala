@@ -59,7 +59,7 @@ object ContactExtractors {
       contacts = in.page.texts
         .flatMap(email.findAllIn(_))
         .map(s => Contact.Email(s.trim))
-        .toSet ++ in.page.texts.flatMap(phonesIn).toSet
+        .toSet // ++ in.page.texts.flatMap(phonesIn).toSet
     )
 
   private[knowledgebase] def phonesIn(str: String): Iterator[Contact] =

@@ -25,7 +25,10 @@ private final class TechnologyExtractor(technologyMap: TechnologyMap)
     patterns.exists(_.matchesTo(value))
 
   private def matchesScriptSrc(page: WebPage, patterns: TechnologyPatterns) =
-    matchesAny(page.scripts, patterns.scriptSrc)
+    matchesAny(
+      page.scripts.view.filterNot(_.startsWith("data:")),
+      patterns.scriptSrc
+    )
 
   private def matchesURL(page: WebPage, patterns: TechnologyPatterns) =
     matchesAny(page.address.toString, patterns.url)
