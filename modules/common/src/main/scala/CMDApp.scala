@@ -13,9 +13,18 @@ abstract class CMDApp[T](cmd: Command[T]) extends IOApp {
     cmd.parse(args) match {
       case Left(value) => IO.println(value).as(ExitCode.Success)
       case Right(value) =>
-        app(value).compile.drain.timed
-          .flatMap((time, _) => logger.info(s"Process took $time"))
-          .as(ExitCode.Success)
+        for {
+          start <- IO.realTime
+          _ <- app(value)
+            .onFinalize(
+              IO.realTime
+                .map(_ - start)
+                .map(_.toCoarsest)
+                .flatMap(time => logger.info(s"Process took $time"))
+            )
+            .compile
+            .drain
+        } yield ExitCode.Success
     }
 
   def app(t: T): fs2.Stream[IO, Unit]
