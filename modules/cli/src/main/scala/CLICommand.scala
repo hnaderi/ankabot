@@ -15,7 +15,8 @@ import scala.concurrent.duration.*
 enum CLICommand {
   case Extract(
       output: Path,
-      inputs: List[Path] = Nil
+      inputs: List[Path] = Nil,
+      children: Boolean = true
   )
   case Scrape(
       output: Path,
@@ -39,8 +40,9 @@ object CLICommand {
       Command("extract", "Extract data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.arguments[Path]("input").orEmpty
-        ).mapN(Extract(_, _))
+          Opts.arguments[Path]("input").orEmpty,
+          Opts.flag("no-children", "Don't extract children").orTrue
+        ).mapN(Extract(_, _, _))
       },
       Command("scrape", "Scrape sources") {
         (

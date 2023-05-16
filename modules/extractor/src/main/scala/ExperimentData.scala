@@ -96,7 +96,7 @@ object ExtractionMetricsCollector {
 
   def printer(
       stats: ExtractionMetrics = ExtractionMetrics(),
-      interval: FiniteDuration = 10.seconds
+      interval: FiniteDuration = 30.seconds
   )(using logger: Logger[IO]): fs2.Stream[IO, ExtractionMetricsCollector] =
     for {
       stats <- fs2.Stream.eval(apply(stats))

@@ -13,17 +13,28 @@ import scala.util.matching.Regex
 
 object Extractor {
 
-  def apply(input: Stream[IO, WebsiteData], output: Path, maxParallel: Int)(
-      using logger: Logger[IO]
+  def apply(
+      input: Stream[IO, WebsiteData],
+      output: Path,
+      maxParallel: Int,
+      extractChild: Boolean = true
+  )(using
+      logger: Logger[IO]
   ): Stream[IO, Unit] = for {
     patterns <- eval(Technology.load)
     extractor = extractors.All(patterns)
     metrics <- ExtractionMetricsCollector.printer()
+    reporter <- StatusReporter[URI]()
     _ <- input
       .map { fetched =>
         for {
+          _ <- resource(reporter.report(fetched.home.source))
           home <- evals(getPage(fetched.home))
-          children <- eval(fetched.children.traverse(getPage).map(_.flatten))
+          children <- eval(
+            (if extractChild then fetched.children else Nil)
+              .traverse(getPage)
+              .map(_.flatten)
+          )
           (homeTime, homeX) <- eval(extractor.io(home).timed)
           (allTime, allX) <- eval(children.traverse(extractor.io).timed).map(
             (t, ch) => (t + homeTime, ch.combineAll.combine(homeX))
