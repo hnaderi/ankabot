@@ -35,12 +35,26 @@ object Main extends CMDApp(CLICommand()) {
         backend = backend,
         output
       )
-    case CLICommand.Sample(inputs, output) =>
+    case CLICommand.Sample(inputs, InputType.Scraped, output) =>
       val input =
         if inputs.isEmpty then Storage.stdinResults[WebsiteData]
         else Stream.emits(inputs).flatMap(Storage.load[WebsiteData])
 
-      Sampling(input, output)
+      Sampling.scraped(input, output)
+
+    case CLICommand.Sample(inputs, InputType.Extracted, output) =>
+      val input =
+        if inputs.isEmpty then Storage.stdinResults[ExperimentData]
+        else Stream.emits(inputs).flatMap(Storage.load[ExperimentData])
+
+      Sampling.extracted(input, output)
+
+    case CLICommand.Inspect(inputs) =>
+      val input =
+        if inputs.isEmpty then Storage.stdinResults[WebsiteData]
+        else Stream.emits(inputs).flatMap(Storage.load[WebsiteData])
+
+      Inspect.scraped(input)
 
   }
 

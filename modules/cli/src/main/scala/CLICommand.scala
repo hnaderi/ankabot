@@ -29,7 +29,22 @@ enum CLICommand {
   )
   case Sample(
       inputs: List[Path] = Nil,
+      inputType: InputType = InputType.Scraped,
       output: Path
+  )
+  case Inspect(
+      inputs: List[Path] = Nil
+  )
+}
+
+enum InputType {
+  case Scraped, Extracted
+}
+
+object InputType {
+  given Argument[InputType] = Argument.fromMap(
+    "file type",
+    InputType.values.map(b => b.toString.toLowerCase -> b).toMap
   )
 }
 
@@ -71,8 +86,14 @@ object CLICommand {
       Command("sample", "Sample scraped data failures") {
         (
           Opts.arguments[Path]("input").orEmpty,
+          Opts
+            .option[InputType]("type", "File type")
+            .withDefault(InputType.Scraped),
           Opts.option[Path]("output", "Output file", "o"),
-        ).mapN(Sample(_, _))
+        ).mapN(Sample(_, _, _))
+      },
+      Command("inspect", "Inspect data") {
+        Opts.arguments[Path]("input").orEmpty.map(Inspect(_))
       }
     )
   )
