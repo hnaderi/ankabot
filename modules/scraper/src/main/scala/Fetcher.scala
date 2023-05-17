@@ -48,41 +48,39 @@ object Fetcher {
             Header("Sec-Fetch-User", "?1")
           )
 
-          logger.debug(s"request: ${req.asCurl(_ => false)}") >>
-            client
-              .run(req)
-              .use { resp =>
-                val redirected = FollowRedirect
-                  .getRedirectUris(resp)
-                val baseURI = redirected.lastOption
-                  .map(_.toString)
-                  .map(URI.create)
-                  .getOrElse(juri)
+          client
+            .run(req)
+            .use { resp =>
+              val redirected = FollowRedirect
+                .getRedirectUris(resp)
+              val baseURI = redirected.lastOption
+                .map(_.toString)
+                .map(URI.create)
+                .getOrElse(juri)
 
-                logger.debug(s"redirected $redirected") >>
-                  resp.bodyText.compile.string.timed.map((time, body) =>
-                    FetchedData(
-                      url = baseURI,
-                      resp.headers.headers.map(h => (h.name.toString, h.value)),
-                      resp.status.code,
-                      HttpVersion(
-                        resp.httpVersion.major,
-                        resp.httpVersion.minor
-                      ),
-                      resp.cookies
-                        .map(rc =>
-                          Cookie(
-                            name = rc.name,
-                            content = rc.content,
-                            domain = rc.domain,
-                            path = rc.path
-                          )
-                        )
-                        .toSet,
-                      body
+              resp.bodyText.compile.string.timed.map((time, body) =>
+                FetchedData(
+                  url = baseURI,
+                  resp.headers.headers.map(h => (h.name.toString, h.value)),
+                  resp.status.code,
+                  HttpVersion(
+                    resp.httpVersion.major,
+                    resp.httpVersion.minor
+                  ),
+                  resp.cookies
+                    .map(rc =>
+                      Cookie(
+                        name = rc.name,
+                        content = rc.content,
+                        domain = rc.domain,
+                        path = rc.path
+                      )
                     )
-                  )
-              }
+                    .toSet,
+                  body
+                )
+              )
+            }
         }
         .timeout(timeoutDuration)
         .map(Right(_))
@@ -113,10 +111,12 @@ object Fetcher {
   def apply(
       client: Client[IO],
       timeout: FiniteDuration = 5.seconds,
+      maxConcurrent: Int = 30,
       maxRedirects: Int = 5
   )(using Logger[IO]): IO[Fetcher] = simple(
-    FollowRedirect(maxRedirects)(GZip()(client)),
-    timeout
+    FollowRedirect(maxRedirects, _ => false)(GZip()(client)),
+    timeout = timeout,
+    maxConcurrent = maxConcurrent
   )
 
   private def buildUri(uri: URI): IO[Uri] =

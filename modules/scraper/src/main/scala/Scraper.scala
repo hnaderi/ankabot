@@ -27,8 +27,14 @@ def Scraper(
   fetcher <- resource(backend match {
     case ScrapeBackend.Ember => EClient(timeout)
     case ScrapeBackend.Netty => NClient(timeout)
-  }).evalMap(Fetcher(_, timeout, maxConcurrentFetch))
-
+  }).evalMap(
+    Fetcher(
+      _,
+      timeout = timeout,
+      maxConcurrent = maxConcurrentFetch,
+      maxRedirects = 5
+    )
+  )
   _ <- sources
     .parEvalMapUnordered(maxConcurrentPage)(src =>
       fetcher(src).flatMap { home =>
