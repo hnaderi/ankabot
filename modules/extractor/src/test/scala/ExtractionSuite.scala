@@ -46,4 +46,35 @@ class ExtractionSuite extends FunSuite {
       assertEquals(ContactExtractors.phonesIn(s).toSeq, Nil)
     )
   }
+
+  test("Matches emails") {
+    val examples = Seq(
+      "mail@example.com",
+      "john.doe@foo.bar",
+      "john.doe@foo.bar.baz.dux",
+      "a@b.c"
+    )
+
+    examples.foreach(s =>
+      assertEquals(ContactExtractors.emailsIn(s), Set(Contact.Email(s)))
+    )
+  }
+
+  test("Does not match stupid emails") {
+    val examples = Seq(
+      "",
+      "A@P",
+      "T@.",
+      "bD@o",
+      "{@.",
+      "5@i4",
+      "4$Y@1",
+      "c?@Z",
+      "c?@Z.z"
+    )
+
+    examples.foreach(s =>
+      assertEquals(ContactExtractors.emailsIn(s), Set.empty)
+    )
+  }
 }

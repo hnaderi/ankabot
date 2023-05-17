@@ -51,14 +51,17 @@ object ContactExtractors {
   }
 
   // https://www.rfc-editor.org/info/rfc5322
-  private val email = """[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+""".r
+  // private val email = """[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+""".r
+  //
+  // Modified version of RFC one, which eliminates emails with weird characters,
+  // and direct TLDs
+  private val email = """[a-zA-Z0-9_+.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9]+""".r
   private val phonePattern =
     """\+?\s*(?:(?:\d{2,}|\(\d{2,}\))[.\- ]?)+""".r
   val body: DataExtractor = in =>
     ExtractedData(
       contacts = in.page.texts
-        .flatMap(email.findAllIn(_))
-        .map(s => Contact.Email(s.trim))
+        .flatMap(emailsIn(_))
         .toSet // ++ in.page.texts.flatMap(phonesIn).toSet
     )
 
@@ -68,6 +71,9 @@ object ContactExtractors {
       .map(_.trim)
       .filterNot(notAPhoneNumber)
       .map(Contact.Phone(_))
+
+  private[knowledgebase] def emailsIn(str: String): Set[Contact] =
+    email.findAllIn(str).map(s => Contact.Email(s.trim)).toSet
 
   private val yearPattern = """.*\b(\d{4})\b.*""".r
   private def looksLikeDate(str: String) = str match {
