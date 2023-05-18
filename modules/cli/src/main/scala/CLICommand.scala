@@ -25,6 +25,7 @@ enum CLICommand {
       maxConcurrentPage: Int = 10,
       maxConcurrentFetch: Int = 30,
       maxChildren: Int = 0,
+      maxRedirect: Int = 5,
       backend: ScrapeBackend = ScrapeBackend.Ember
   )
   case Sample(
@@ -79,9 +80,15 @@ object CLICommand {
             )
             .withDefault(0),
           Opts
+            .option[Int](
+              "max-redirect",
+              "How many redirects to follow at maximum"
+            )
+            .withDefault(5),
+          Opts
             .option[ScrapeBackend]("backend", "Scrape backend to use")
             .withDefault(ScrapeBackend.Ember)
-        ).mapN(Scrape(_, _, _, _, _, _, _))
+        ).mapN(Scrape(_, _, _, _, _, _, _, _))
       },
       Command("sample", "Sample scraped data failures") {
         (

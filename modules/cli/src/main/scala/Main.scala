@@ -32,6 +32,7 @@ object Main extends CMDApp(CLICommand()) {
         maxConcurrentPage = maxConcurrentPage,
         maxConcurrentFetch = maxConcurrentFetch,
         maxChildren = maxChildren,
+        maxRedirect = maxRedirect,
         backend = backend,
         output
       )

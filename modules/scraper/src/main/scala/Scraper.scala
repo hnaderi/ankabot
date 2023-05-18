@@ -20,6 +20,7 @@ def Scraper(
     maxConcurrentPage: Int,
     maxConcurrentFetch: Int,
     maxChildren: Int,
+    maxRedirect: Int,
     backend: ScrapeBackend,
     result: Path
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
@@ -32,7 +33,7 @@ def Scraper(
       _,
       timeout = timeout,
       maxConcurrent = maxConcurrentFetch,
-      maxRedirects = 5
+      maxRedirects = maxRedirect
     )
   )
   _ <- sources
