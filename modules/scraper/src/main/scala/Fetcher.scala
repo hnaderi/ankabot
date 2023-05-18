@@ -21,6 +21,19 @@ import scala.concurrent.duration.*
 type Fetcher = URI => IO[FetchResult]
 
 object Fetcher {
+  private val headers: Header.ToRaw = Seq(
+    "User-Agent" -> "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0",
+    "Accept" -> "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language" -> "en-US,en;q=0.5",
+    "DNT" -> "1",
+    "Upgrade-Insecure-Requests" -> "1",
+    "Connection" -> "keep-alive",
+    "Sec-Fetch-Dest" -> "document",
+    "Sec-Fetch-Mode" -> "navigate",
+    "Sec-Fetch-Site" -> "none",
+    "Sec-Fetch-User" -> "?1"
+  )
+
   private def create(
       client: Client[IO],
       timeoutDuration: FiniteDuration
@@ -28,25 +41,7 @@ object Fetcher {
     juri =>
       buildUri(juri)
         .flatMap { uri =>
-          val req = GET.apply(
-            uri,
-            Header(
-              "User-Agent",
-              "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0"
-            ),
-            Header(
-              "Accept",
-              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-            ),
-            Header("Accept-Language", "en-US,en;q=0.5"),
-            Header("DNT", "1"),
-            Header("Upgrade-Insecure-Requests", "1"),
-            Header("Connection", "keep-alive"),
-            Header("Sec-Fetch-Dest", "document"),
-            Header("Sec-Fetch-Mode", "navigate"),
-            Header("Sec-Fetch-Site", "none"),
-            Header("Sec-Fetch-User", "?1")
-          )
+          val req = GET(uri, headers)
 
           client
             .run(req)
