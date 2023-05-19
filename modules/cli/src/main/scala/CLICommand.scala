@@ -26,7 +26,7 @@ enum CLICommand {
       maxConcurrentFetch: Int = 30,
       maxChildren: Int = 0,
       maxRedirect: Int = 5,
-      backend: ScrapeBackend = ScrapeBackend.Ember
+      backend: ScrapeBackend = ScrapeBackend.JDK
   )
   case Sample(
       inputs: List[Path] = Nil,
@@ -87,7 +87,7 @@ object CLICommand {
             .withDefault(5),
           Opts
             .option[ScrapeBackend]("backend", "Scrape backend to use")
-            .withDefault(ScrapeBackend.Ember)
+            .withDefault(ScrapeBackend.JDK)
         ).mapN(Scrape(_, _, _, _, _, _, _, _))
       },
       Command("sample", "Sample scraped data failures") {

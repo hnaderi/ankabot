@@ -26,8 +26,8 @@ def Scraper(
 )(using logger: Logger[IO]): Stream[IO, Unit] = for {
   metrics <- ScrapeMetrics.printer()
   fetcher <- resource(backend match {
+    case ScrapeBackend.JDK   => JClient(timeout)
     case ScrapeBackend.Ember => EClient(timeout)
-    case ScrapeBackend.Netty => NClient(timeout)
   }).evalMap(
     Fetcher(
       _,
@@ -79,7 +79,7 @@ def Scraper(
 } yield ()
 
 enum ScrapeBackend {
-  case Ember, Netty
+  case Ember, JDK
 }
 
 object ScrapeBackend {

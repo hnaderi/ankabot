@@ -57,8 +57,8 @@ lazy val scraper = module("scraper") {
     .dependsOn(common, jsoup)
     .settings(
       libraryDependencies ++= Seq(
-        "org.http4s" %% "http4s-netty-client" % "0.5.6",
-        "org.http4s" %% "http4s-ember-client" % "0.23.18"
+        "org.http4s" %% "http4s-ember-client" % "0.23.19",
+        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1"
       )
     )
 }

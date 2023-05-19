@@ -148,7 +148,7 @@ object Sampling {
 
     def hasFinished: Boolean = remaining <= 0
 
-    def overview: MapView[K, Int] = data.mapValues(_.size)
+    def overview: MapView[K, Int] = data.view.mapValues(_.size)
   }
 
   object DataSample {
