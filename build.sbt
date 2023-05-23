@@ -12,6 +12,7 @@ ThisBuild / developers := List(
 )
 ThisBuild / fork := true
 ThisBuild / scalaVersion := "3.2.2"
+ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 lazy val root = project.in(file(".")).aggregate(common, scraper, extractor, cli)
 
@@ -58,7 +59,7 @@ lazy val scraper = module("scraper") {
     .settings(
       libraryDependencies ++= Seq(
         "org.http4s" %% "http4s-ember-client" % "0.23.19",
-        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1"
+        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-3-e778cd0-SNAPSHOT"
       )
     )
 }
