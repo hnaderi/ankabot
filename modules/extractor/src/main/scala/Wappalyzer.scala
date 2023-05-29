@@ -53,7 +53,7 @@ object Wappalyzer {
 
   private given Decoder[Technology] = (c: HCursor) =>
     for {
-      description <- c.downField("").as[Option[String]]
+      description <- c.downField("description").as[Option[String]]
       icon <- c.downField("icon").as[Option[String]]
       website <- c.downField("website").as[Option[String]]
       saas <- c.downField("saas").as[Option[Boolean]]
