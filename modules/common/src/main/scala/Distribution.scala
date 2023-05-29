@@ -110,14 +110,3 @@ object TimeDistribution {
       l => s"$l micros"
     )
 }
-
-object Main extends App {
-  import scala.util.Random
-  val dist = Distribution.buckets(0, 1, 5, 10, 50, 100)
-  // Distribution(0.second, 2.seconds, 10)
-
-  val rng = Random()
-  val newDist =
-    List.fill(100000)(rng.between(0, 20 * 1000)).foldLeft(dist)(_ add _)
-  println(newDist)
-}

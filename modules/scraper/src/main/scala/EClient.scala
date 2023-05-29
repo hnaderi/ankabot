@@ -9,5 +9,5 @@ import scala.concurrent.duration.*
 
 object EClient {
   def apply(timeout: FiniteDuration = 5.seconds): Resource[IO, Client[IO]] =
-    EmberClientBuilder.default[IO].withHttp2.withTimeout(timeout).build
+    EmberClientBuilder.default[IO].withTimeout(timeout).build
 }

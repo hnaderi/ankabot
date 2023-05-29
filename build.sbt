@@ -59,7 +59,7 @@ lazy val scraper = module("scraper") {
     .settings(
       libraryDependencies ++= Seq(
         "org.http4s" %% "http4s-ember-client" % "0.23.19",
-        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-3-e778cd0-SNAPSHOT"
+        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-5-999d1cd-SNAPSHOT"
       )
     )
 }
@@ -83,10 +83,4 @@ lazy val cli = module("cli") {
     .enablePlugins(JavaAppPackaging)
 }
 
-ThisBuild / assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", "io.netty.versions.properties") =>
-    MergeStrategy.first
-  case x =>
-    val oldStrategy = (assembly / assemblyMergeStrategy).value
-    oldStrategy(x)
-}
+addCommandAlias("fmt", "scalafmtAll;scalafmtSbt")

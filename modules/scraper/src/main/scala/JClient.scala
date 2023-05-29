@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import org.http4s.client.Client
 import org.http4s.jdkhttpclient.JdkHttpClient
-import org.http4s.jdkhttpclient.JdkHttpClient2
 
 import java.net.http.HttpClient
 import scala.concurrent.duration.*
@@ -28,7 +27,7 @@ object JClient {
             params.setProtocols(params.getProtocols().filter(_ != "TLSv1.3"))
             builder.sslParameters(params)
           }
-          JdkHttpClient2[IO](builder.build())
+          JdkHttpClient[IO](builder.build())
         }
       )
     )
