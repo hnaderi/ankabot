@@ -14,7 +14,9 @@ ThisBuild / fork := true
 ThisBuild / scalaVersion := "3.2.2"
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
-lazy val root = project.in(file(".")).aggregate(common, scraper, extractor, cli)
+lazy val root = project
+  .in(file("."))
+  .aggregate(common, scraper, extractor, cli, worker)
 
 def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))
@@ -68,9 +70,23 @@ lazy val extractor = module("extractor") {
   project.dependsOn(common, jsoup)
 }
 
-lazy val cli = module("cli") {
+lazy val worker = module("worker") {
   project
     .dependsOn(scraper, extractor)
+    .settings(
+      libraryDependencies ++= Seq(
+        "org.tpolecat" %% "skunk-core" % "0.5.1",
+        "dev.hnaderi" %% "lepus-std" % "0.3.0",
+        "org.http4s" %% "http4s-dsl" % "0.23.19",
+        "org.http4s" %% "http4s-ember-server" % "0.23.19"
+      )
+    )
+    .enablePlugins(DockerPlugin)
+}
+
+lazy val cli = module("cli") {
+  project
+    .dependsOn(scraper, extractor, worker)
     .settings(
       assembly / assemblyJarName := s"kb",
       assemblyPrependShellScript := Some(

@@ -36,6 +36,7 @@ enum CLICommand {
   case Inspect(
       inputs: List[Path] = Nil
   )
+  case Service(cmd: ServiceCommand)
 }
 
 enum InputType {
@@ -50,7 +51,6 @@ object InputType {
 }
 
 object CLICommand {
-  private given Argument[Path] = Argument[JPath].map(Path.fromNioPath)
   def apply(): Command[CLICommand] = Command("kb", "Knowledge base CLI")(
     Opts.subcommands(
       Command("extract", "Extract data") {
@@ -101,7 +101,8 @@ object CLICommand {
       },
       Command("inspect", "Inspect data") {
         Opts.arguments[Path]("input").orEmpty.map(Inspect(_))
-      }
+      },
+      ServiceCommand().map(Service(_))
     )
   )
 }
