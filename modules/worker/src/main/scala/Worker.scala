@@ -6,6 +6,7 @@ import cats.effect.kernel.Resource
 import cats.syntax.all.*
 import fs2.Chunk
 import fs2.Stream
+import io.odin.Logger
 import lepus.client.Connection
 import lepus.client.MessageCodec
 import lepus.protocol.domains.*
@@ -33,13 +34,23 @@ object Worker {
     ChannelCodec.plain
   )
 
-  def apply(con: Connection[IO], maxConcurrent: Int = 10): Stream[IO, Nothing] =
-    resource(con.channel)
-      .evalMap(WorkPoolChannel.worker(tasks, _))
-      .flatMap(pool =>
-        pool.jobs
-          .parEvalMapUnordered(maxConcurrent)(job =>
-            process(job) *> pool.processed(job)
+  def apply(
+      con: Connection[IO],
+      config: Scraper.Config
+  )(using
+      logger: Logger[IO]
+  ): Stream[IO, Nothing] =
+    Scraper
+      .build(config)
+      .flatMap(scrape =>
+        resource(con.channel)
+          .evalMap(WorkPoolChannel.worker(tasks, _))
+          .flatMap(pool =>
+            pool.jobs
+              .parEvalMapUnordered(config.maxConcurrentPage)(job =>
+                job.payload.traverse(scrape) *>
+                  pool.processed(job)
+              )
           )
       )
       .drain

@@ -1,4 +1,5 @@
 package io.aibees.knowledgebase
+package cli
 
 import cats.effect.IO
 import cats.syntax.all.*
@@ -32,13 +33,8 @@ object Main extends CMDApp(CLICommand()) {
 
       Scraper(
         input,
-        timeout,
-        maxConcurrentPage = maxConcurrentPage,
-        maxConcurrentFetch = maxConcurrentFetch,
-        maxChildren = maxChildren,
-        maxRedirect = maxRedirect,
-        backend = backend,
-        output
+        output,
+        cmd.config
       )
     case CLICommand.Sample(inputs, InputType.Scraped, output) =>
       val input =
@@ -63,7 +59,7 @@ object Main extends CMDApp(CLICommand()) {
 
     case CLICommand.Service(cmd) =>
       cmd match {
-        case ServiceCommand.Start(rmq, webPort, maxConcurrent) =>
+        case ServiceCommand.Start(rmq, webPort, config) =>
           resource(connect(rmq)).flatMap { con =>
             val ws = webPort.fold(never[IO])(port =>
               exec(
@@ -73,7 +69,7 @@ object Main extends CMDApp(CLICommand()) {
                   .useForever
               )
             )
-            worker.Worker(con, maxConcurrent).concurrently(ws)
+            worker.Worker(con, config).concurrently(ws)
           }
         case ServiceCommand.Upload(address, file, batchSize) =>
           resource(EmberClientBuilder.default[IO].build).flatMap(cl =>

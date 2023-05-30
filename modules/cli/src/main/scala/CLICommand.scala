@@ -1,4 +1,5 @@
 package io.aibees.knowledgebase
+package cli
 
 import cats.effect.ExitCode
 import cats.effect.IO
@@ -21,12 +22,7 @@ enum CLICommand {
   case Scrape(
       output: Path,
       inputs: List[Path] = Nil,
-      timeout: FiniteDuration = 5.seconds,
-      maxConcurrentPage: Int = 10,
-      maxConcurrentFetch: Int = 30,
-      maxChildren: Int = 0,
-      maxRedirect: Int = 5,
-      backend: ScrapeBackend = ScrapeBackend.JDK
+      config: Scraper.Config
   )
   case Sample(
       inputs: List[Path] = Nil,
@@ -51,6 +47,37 @@ object InputType {
 }
 
 object CLICommand {
+  private given Argument[ScrapeBackend] = Argument.fromMap(
+    "scrape backend",
+    ScrapeBackend.values.map(b => b.toString.toLowerCase -> b).toMap
+  )
+  private[cli] val scrapeConfig: Opts[Scraper.Config] = (
+    Opts
+      .option[FiniteDuration]("timeout", "Timeout", "t")
+      .withDefault(5.seconds),
+    Opts
+      .option[Int]("max-page", "Max concurrent page", "n")
+      .withDefault(10),
+    Opts
+      .option[Int]("max-fetch", "Max concurrent fetch")
+      .withDefault(30),
+    Opts
+      .option[Int](
+        "max-children",
+        "How many child pages to get at maximum"
+      )
+      .withDefault(0),
+    Opts
+      .option[Int](
+        "max-redirect",
+        "How many redirects to follow at maximum"
+      )
+      .withDefault(5),
+    Opts
+      .option[ScrapeBackend]("backend", "Scrape backend to use")
+      .withDefault(ScrapeBackend.JDK)
+  ).mapN(Scraper.Config(_, _, _, _, _, _))
+
   def apply(): Command[CLICommand] = Command("kb", "Knowledge base CLI")(
     Opts.subcommands(
       Command("extract", "Extract data") {
@@ -64,31 +91,8 @@ object CLICommand {
         (
           Opts.option[Path]("output", "Output file", "o"),
           Opts.arguments[Path]("input").orEmpty,
-          Opts
-            .option[FiniteDuration]("timeout", "Timeout", "t")
-            .withDefault(5.seconds),
-          Opts
-            .option[Int]("max-page", "Max concurrent page", "n")
-            .withDefault(10),
-          Opts
-            .option[Int]("max-fetch", "Max concurrent fetch")
-            .withDefault(30),
-          Opts
-            .option[Int](
-              "max-children",
-              "How many child pages to get at maximum"
-            )
-            .withDefault(0),
-          Opts
-            .option[Int](
-              "max-redirect",
-              "How many redirects to follow at maximum"
-            )
-            .withDefault(5),
-          Opts
-            .option[ScrapeBackend]("backend", "Scrape backend to use")
-            .withDefault(ScrapeBackend.JDK)
-        ).mapN(Scrape(_, _, _, _, _, _, _, _))
+          scrapeConfig
+        ).mapN(Scrape(_, _, _))
       },
       Command("sample", "Sample scraped data failures") {
         (

@@ -1,4 +1,5 @@
 package io.aibees.knowledgebase
+package cli
 
 import cats.syntax.all.*
 import com.comcast.ip4s.*
@@ -15,7 +16,7 @@ enum ServiceCommand {
   case Start(
       rmq: RabbitMQConfig = RabbitMQConfig(),
       webPort: Option[Port] = None,
-      maxConcurrent: Int = 10
+      config: Scraper.Config = Scraper.Config()
   )
   case Upload(
       url: URI,
@@ -42,9 +43,7 @@ object ServiceCommand {
           (
             RabbitMQConfig.opts,
             Opts.option[Port]("port", "web service listen port", "l").orNone,
-            Opts
-              .option[Int]("max-concurrent", "max concurrent processing", "N")
-              .withDefault(10),
+            CLICommand.scrapeConfig
           ).mapN(Start(_, _, _))
         },
         Command("upload", "upload to a submission request") {
