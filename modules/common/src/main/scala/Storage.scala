@@ -37,7 +37,7 @@ object Storage {
   def stdinSources(using Logger[IO]): Stream[IO, URI] =
     stdin.through(decodeSources)
 
-  private def decodeSources(using logger: Logger[IO]): Pipe[IO, String, URI] =
+  def decodeSources(using logger: Logger[IO]): Pipe[IO, String, URI] =
     _.through(fs2.text.lines)
       .filterNot(_.isBlank())
       .evalTap(logger.debug(_))

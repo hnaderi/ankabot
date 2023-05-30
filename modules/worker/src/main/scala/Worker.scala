@@ -55,8 +55,6 @@ object Worker {
       )
       .drain
 
-  private def process(job: Job[Task]): IO[Unit] = IO.println(job.payload)
-
   def submit(
       tasks: WorkPoolServer[IO, Task],
       sources: Stream[IO, URI],
