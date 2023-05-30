@@ -81,7 +81,6 @@ lazy val worker = module("worker") {
         "org.http4s" %% "http4s-ember-server" % "0.23.19"
       )
     )
-    .enablePlugins(DockerPlugin)
 }
 
 lazy val cli = module("cli") {
@@ -94,9 +93,19 @@ lazy val cli = module("cli") {
       ),
       maintainer := "mail@hnaderi.dev",
       executableScriptName := "kb",
-      packageName := "kb"
+      packageName := "kb",
+      Docker / packageName := s"kb-cli",
+      dockerRepository := sys.env.get("DOCKER_REGISTRY"),
+      dockerBaseImage := "openjdk:11-jre-slim",
+      dockerExposedPorts := Seq(8080),
+      dockerExposedVolumes := Seq("/opt/docker/logs"),
+      dockerUpdateLatest := true,
+      Docker / daemonUserUid := Some("1001"),
+      Docker / daemonUser := "aibees",
+      Docker / maintainer := "Hossein Naderi"
     )
     .enablePlugins(JavaAppPackaging)
+    .enablePlugins(DockerPlugin)
 }
 
 addCommandAlias("fmt", "scalafmtAll;scalafmtSbt")
