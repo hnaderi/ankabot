@@ -13,6 +13,7 @@ import io.aibees.knowledgebase.db.PgConfig
 import skunk.Session
 import natchez.Trace.Implicits.noop
 import io.aibees.knowledgebase.worker.Persistence
+import skunk.util.Typer.Strategy
 
 object Main extends CMDApp(CLICommand()) {
   protected given logger: Logger[IO] = io.odin.consoleLogger[IO]()
@@ -108,6 +109,7 @@ object Main extends CMDApp(CLICommand()) {
     user = pg.username,
     password = pg.password,
     database = pg.database,
-    max = 10
+    max = 10,
+    strategy = Strategy.SearchPath
   )
 }

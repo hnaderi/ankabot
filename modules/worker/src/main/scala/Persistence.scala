@@ -22,6 +22,7 @@ object Persistence {
             TechnologyInsert(
               id = k,
               description = v.description,
+              website = v.website,
               saas = v.saas,
               oss = v.oss
             )

@@ -81,7 +81,7 @@ object PGInsertionDAO {
     (uri ~ timestamptz ~ duration ~ bool ~ int4 ~ int4).gimap
 
   private val technology: Codec[TechnologyInsert] =
-    (varchar ~ varchar.opt ~ bool.opt ~ bool.opt).gimap
+    (varchar ~ varchar.opt ~ varchar.opt ~ bool.opt ~ bool.opt).gimap
 
   private def insert(results: List[ResultInsert]): Query[results.type, UUID] =
     sql"""
@@ -95,8 +95,7 @@ returning id
 insert into technologies ("id", "description", "website", "saas", "oss")
 values ${technology.values.list(techs)}
 on conflict (id) do update
-  set name = excluded.name,
-      description = excluded.description,
+  set description = excluded.description,
       website = excluded.website,
       saas = excluded.saas,
       oss = excluded.oss
@@ -105,7 +104,7 @@ on conflict (id) do update
   private def insertPricings(
       techs: List[TechnologyPricingInsert]
   ): Command[techs.type] = sql"""
-insert into technology_pricing (id, pricing)
+insert into technology_pricing (technology_id, value)
 values ${(varchar ~ pricing).values.list(techs)}
 """.command
 

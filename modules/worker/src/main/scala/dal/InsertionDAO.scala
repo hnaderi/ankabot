@@ -47,6 +47,7 @@ object InsertionDAO {
   final case class TechnologyInsert(
       id: TechnologyId,
       description: Option[String] = None,
+      website: Option[String] = None,
       saas: Option[Boolean] = None,
       oss: Option[Boolean] = None
   )
