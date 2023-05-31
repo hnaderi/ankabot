@@ -1,14 +1,18 @@
 package io.aibees.knowledgebase
 package cli
 
-import cats.effect.IO
 import cats.syntax.all.*
+import cats.effect.IO
 import fs2.Stream
 import fs2.Stream.*
 import io.aibees.knowledgebase.Storage.stdinSources
 import io.odin.Logger
 import lepus.client.LepusClient
 import org.http4s.ember.client.EmberClientBuilder
+import io.aibees.knowledgebase.db.PgConfig
+import skunk.Session
+import natchez.Trace.Implicits.noop
+import io.aibees.knowledgebase.worker.Persistence
 
 object Main extends CMDApp(CLICommand()) {
   protected given logger: Logger[IO] = io.odin.consoleLogger[IO]()
@@ -59,8 +63,11 @@ object Main extends CMDApp(CLICommand()) {
 
     case CLICommand.Service(cmd) =>
       cmd match {
-        case ServiceCommand.Start(rmq, webPort, config) =>
-          resource(connect(rmq)).flatMap { con =>
+        case ServiceCommand.Migrate(pg) =>
+          exec(connect(pg).flatten.use(Persistence.migrate))
+        case ServiceCommand.Start(rmq, pg, webPort, config) =>
+          val persist = connect(pg).map(Persistence(_))
+          resource(persist.parProduct(connect(rmq))).flatMap { (db, con) =>
             val ws = webPort.fold(never[IO])(port =>
               exec(
                 worker.Worker
@@ -69,7 +76,7 @@ object Main extends CMDApp(CLICommand()) {
                   .useForever
               )
             )
-            worker.Worker(con, config).concurrently(ws)
+            worker.Worker(con, db, config).concurrently(ws)
           }
         case ServiceCommand.Upload(address, file, batchSize) =>
           resource(EmberClientBuilder.default[IO].build).flatMap(cl =>
@@ -94,4 +101,13 @@ object Main extends CMDApp(CLICommand()) {
 
   private def publisher(rmq: RabbitMQConfig) =
     connect(rmq).flatMap(worker.Worker.publisher(_))
+
+  private def connect(pg: PgConfig) = Session.pooled[IO](
+    host = pg.host,
+    port = pg.port,
+    user = pg.username,
+    password = pg.password,
+    database = pg.database,
+    max = 10
+  )
 }

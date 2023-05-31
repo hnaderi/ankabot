@@ -60,6 +60,8 @@ enum Pricing {
 
 object Pricing {
   given Codec[Pricing] = ConfiguredEnumCodec.derive()
+  val mapping: Map[String, Pricing] =
+    Pricing.values.map(p => p.toString -> p).toMap
 }
 
 private given Decoder[Regex] = Decoder.decodeString.map(_.r)

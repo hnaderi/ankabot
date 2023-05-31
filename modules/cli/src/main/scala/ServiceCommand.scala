@@ -7,14 +7,19 @@ import com.monovore.decline.Argument
 import com.monovore.decline.Command
 import com.monovore.decline.Opts
 import fs2.io.file.Path
+import io.aibees.knowledgebase.db.PgConfig
 
 import java.net.URI
 import java.nio.file.{Path as JPath}
 import scala.concurrent.duration.*
 
 enum ServiceCommand {
+  case Migrate(
+      pg: PgConfig = PgConfig()
+  )
   case Start(
       rmq: RabbitMQConfig = RabbitMQConfig(),
+      pg: PgConfig = PgConfig(),
       webPort: Option[Port] = None,
       config: Scraper.Config = Scraper.Config()
   )
@@ -39,12 +44,14 @@ object ServiceCommand {
   def apply(): Command[ServiceCommand] =
     Command("service", "Distributed service")(
       Opts.subcommands(
+        Command("migrate", "migrate db") { PgConfig.opts.map(Migrate(_)) },
         Command("start", "start a worker") {
           (
             RabbitMQConfig.opts,
+            PgConfig.opts,
             Opts.option[Port]("port", "web service listen port", "l").orNone,
             CLICommand.scrapeConfig
-          ).mapN(Start(_, _, _))
+          ).mapN(Start(_, _, _, _))
         },
         Command("upload", "upload to a submission request") {
           (

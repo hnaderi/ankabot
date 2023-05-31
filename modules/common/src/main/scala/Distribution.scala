@@ -1,6 +1,5 @@
 package io.aibees.knowledgebase
 
-import cats.Show
 import cats.syntax.all.*
 
 import scala.concurrent.duration.*

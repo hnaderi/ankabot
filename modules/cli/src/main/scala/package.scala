@@ -3,9 +3,20 @@ package io.aibees.knowledgebase
 import cats.syntax.all.*
 import com.comcast.ip4s.*
 import com.monovore.decline.Argument
+import com.monovore.decline.Opts
 import fs2.io.file.Path
 
 import java.nio.file.{Path as JPath}
+
+private def opt[T: Argument](
+    name: String,
+    env: String,
+    help: String,
+    default: T
+) = Opts
+  .option[T](name, help)
+  .orElse(Opts.env(env, help))
+  .withDefault(default)
 
 private given Argument[Host] = Argument.from("hostname")(s =>
   Host.fromString(s).toValidNel(s"Invalid hostname $s")

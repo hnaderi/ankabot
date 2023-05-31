@@ -22,4 +22,6 @@ enum SocialNetwork {
 
 object SocialNetwork {
   given Codec[SocialNetwork] = ConfiguredEnumCodec.derive()
+  val mapping: Map[String, SocialNetwork] =
+    SocialNetwork.values.map(p => p.toString -> p).toMap
 }

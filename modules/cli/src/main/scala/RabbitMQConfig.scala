@@ -14,17 +14,29 @@ final case class RabbitMQConfig(
 
 object RabbitMQConfig {
   def opts = (
-    Opts
-      .option[Host]("rmq-host", "rabbit mq host", "R")
-      .withDefault(host"localhost"),
-    Opts
-      .option[Port]("rmq-port", "rabbit mq port", "P")
-      .withDefault(port"5672"),
-    Opts
-      .option[String]("rmq-username", "rabbit mq username", "u")
-      .withDefault("guest"),
-    Opts
-      .option[String]("rmq-password", "rabbit mq password", "p")
-      .withDefault("guest"),
+    opt[Host](
+      name = "rmq-host",
+      env = "RABBITMQ_HOST",
+      help = "rabbit mq host",
+      default = host"localhost"
+    ),
+    opt(
+      name = "rmq-port",
+      env = "RABBITMQ_PORT",
+      help = "rabbit mq port",
+      default = port"5672"
+    ),
+    opt(
+      name = "rmq-username",
+      env = "RABBITMQ_USERNAME",
+      help = "rabbit mq username",
+      default = "guest"
+    ),
+    opt(
+      name = "rmq-password",
+      env = "RABBITMQ_PASSWORD",
+      help = "rabbit mq password",
+      default = "guest"
+    )
   ).mapN(RabbitMQConfig(_, _, _, _))
 }

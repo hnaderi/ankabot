@@ -36,24 +36,18 @@ object Worker {
 
   def apply(
       con: Connection[IO],
+      persist: Persistence,
       config: Scraper.Config
   )(using
       logger: Logger[IO]
-  ): Stream[IO, Nothing] =
-    Scraper
-      .build(config)
-      .flatMap(scrape =>
-        resource(con.channel)
-          .evalMap(WorkPoolChannel.worker(tasks, _))
-          .flatMap(pool =>
-            pool.jobs
-              .parEvalMapUnordered(config.maxConcurrentPage)(job =>
-                job.payload.traverse(scrape) *>
-                  pool.processed(job)
-              )
-          )
-      )
-      .drain
+  ): Stream[IO, Unit] = for {
+    scrape <- Scraper.build(config)
+    pool <- resource(con.channel).evalMap(WorkPoolChannel.worker(tasks, _))
+    out <- pool.jobs.parEvalMapUnordered(config.maxConcurrentPage) { job =>
+      job.payload.traverse(scrape).flatMap(persist) *>
+        pool.processed(job)
+    }
+  } yield ()
 
   def submit(
       tasks: WorkPoolServer[IO, Task],

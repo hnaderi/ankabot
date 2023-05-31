@@ -1,16 +1,12 @@
 package io.aibees.knowledgebase
 package cli
 
-import cats.effect.ExitCode
-import cats.effect.IO
-import cats.effect.IOApp
 import cats.syntax.all.*
 import com.monovore.decline.Argument
 import com.monovore.decline.Command
 import com.monovore.decline.Opts
 import fs2.io.file.Path
 
-import java.nio.file.{Path as JPath}
 import scala.concurrent.duration.*
 
 enum CLICommand {
