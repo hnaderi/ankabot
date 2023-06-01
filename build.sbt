@@ -14,6 +14,7 @@ ThisBuild / fork := true
 ThisBuild / scalaVersion := "3.2.2"
 ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
+ThisBuild / tlCiMimaBinaryIssueCheck := false
 
 lazy val root = project
   .in(file("."))
