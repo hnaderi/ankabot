@@ -1,18 +1,18 @@
 package io.aibees.knowledgebase
 package cli
 
-import cats.syntax.all.*
 import cats.effect.IO
+import cats.syntax.all.*
 import fs2.Stream
 import fs2.Stream.*
 import io.aibees.knowledgebase.Storage.stdinSources
+import io.aibees.knowledgebase.db.PgConfig
+import io.aibees.knowledgebase.worker.Persistence
 import io.odin.Logger
 import lepus.client.LepusClient
-import org.http4s.ember.client.EmberClientBuilder
-import io.aibees.knowledgebase.db.PgConfig
-import skunk.Session
 import natchez.Trace.Implicits.noop
-import io.aibees.knowledgebase.worker.Persistence
+import org.http4s.ember.client.EmberClientBuilder
+import skunk.Session
 import skunk.util.Typer.Strategy
 
 object Main extends CMDApp(CLICommand()) {
@@ -65,11 +65,12 @@ object Main extends CMDApp(CLICommand()) {
     case CLICommand.Service(cmd) =>
       cmd match {
         case ServiceCommand.Migrate(pg) =>
-          exec(connect(pg).flatten.use(Persistence.migrate))
+          exec(Persistence.migrate(connect(pg).flatten))
         case ServiceCommand.Start(rmq, pg, webPort, config) =>
           val persist = connect(pg).map(Persistence(_))
-          resource(persist.parProduct(connect(rmq))).flatMap { (db, con) =>
-            val ws = webPort.fold(never[IO])(port =>
+          for {
+            (db, con) <- resource(persist.parProduct(connect(rmq)))
+            ws = webPort.fold(never[IO])(port =>
               exec(
                 worker.Worker
                   .publisher(con)
@@ -77,8 +78,9 @@ object Main extends CMDApp(CLICommand()) {
                   .useForever
               )
             )
-            worker.Worker(con, db, config).concurrently(ws)
-          }
+            extractor <- eval(Extractor.build())
+            _ <- worker.Worker(con, db, config, extractor).concurrently(ws)
+          } yield ()
         case ServiceCommand.Upload(address, file, batchSize) =>
           resource(EmberClientBuilder.default[IO].build).flatMap(cl =>
             file
@@ -103,13 +105,15 @@ object Main extends CMDApp(CLICommand()) {
   private def publisher(rmq: RabbitMQConfig) =
     connect(rmq).flatMap(worker.Worker.publisher(_))
 
-  private def connect(pg: PgConfig) = Session.pooled[IO](
-    host = pg.host,
-    port = pg.port,
-    user = pg.username,
-    password = pg.password,
-    database = pg.database,
-    max = 10,
-    strategy = Strategy.SearchPath
-  )
+  private def connect(pg: PgConfig) =
+    logger.info(s"Connecting to postgres db: ${pg.database}").toResource *>
+      Session.pooled[IO](
+        host = pg.host,
+        port = pg.port,
+        user = pg.username,
+        password = pg.password,
+        database = pg.database,
+        max = 10,
+        strategy = Strategy.SearchPath
+      )
 }

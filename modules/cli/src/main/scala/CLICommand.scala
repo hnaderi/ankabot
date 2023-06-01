@@ -52,23 +52,23 @@ object CLICommand {
       .option[FiniteDuration]("timeout", "Timeout", "t")
       .withDefault(5.seconds),
     Opts
-      .option[Int]("max-page", "Max concurrent page", "n")
-      .withDefault(10),
+      .option[Short]("max-page", "Max concurrent page", "n")
+      .withDefault[Short](10),
     Opts
-      .option[Int]("max-fetch", "Max concurrent fetch")
-      .withDefault(30),
+      .option[Short]("max-fetch", "Max concurrent fetch")
+      .withDefault[Short](30),
     Opts
-      .option[Int](
+      .option[Short](
         "max-children",
         "How many child pages to get at maximum"
       )
-      .withDefault(0),
+      .withDefault[Short](0),
     Opts
-      .option[Int](
+      .option[Short](
         "max-redirect",
         "How many redirects to follow at maximum"
       )
-      .withDefault(5),
+      .withDefault[Short](5),
     Opts
       .option[ScrapeBackend]("backend", "Scrape backend to use")
       .withDefault(ScrapeBackend.JDK)

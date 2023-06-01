@@ -18,10 +18,10 @@ type Scraper = URI => IO[WebsiteData]
 object Scraper {
   final case class Config(
       timeout: FiniteDuration = 5.seconds,
-      maxConcurrentPage: Int = 10,
-      maxConcurrentFetch: Int = 30,
-      maxChildren: Int = 0,
-      maxRedirect: Int = 5,
+      maxConcurrentPage: Short = 10,
+      maxConcurrentFetch: Short = 30,
+      maxChildren: Short = 0,
+      maxRedirect: Short = 5,
       backend: ScrapeBackend = ScrapeBackend.JDK
   )
 

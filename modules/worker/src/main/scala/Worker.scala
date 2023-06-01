@@ -37,17 +37,55 @@ object Worker {
   def apply(
       con: Connection[IO],
       persist: Persistence,
-      config: Scraper.Config
+      config: Scraper.Config,
+      extractor: Extractor
   )(using
       logger: Logger[IO]
   ): Stream[IO, Unit] = for {
     scrape <- Scraper.build(config)
-    pool <- resource(con.channel).evalMap(WorkPoolChannel.worker(tasks, _))
+    pool <- resource(con.channel)
+      .evalTap(_.messaging.qos(prefetchCount = config.maxConcurrentPage))
+      .evalMap(WorkPoolChannel.worker(tasks, _))
+    extract = Worker.extract(extractor)
+
     out <- pool.jobs.parEvalMapUnordered(config.maxConcurrentPage) { job =>
-      job.payload.traverse(scrape).flatMap(persist) *>
-        pool.processed(job)
+      for {
+        scraped <- job.payload.traverse(scrape)
+
+        extracted <- scraped.traverse(extract)
+
+        _ <- persist(extracted)
+        _ <- pool.processed(job)
+      } yield ()
     }
   } yield ()
+
+  final case class Result(
+      domain: URI,
+      duration: FiniteDuration,
+      extracted: Option[ExtractedData] = None,
+      totalChildren: Int = 0,
+      fetchedChildren: Int = 0
+  )
+
+  private def extract(
+      extractor: Extractor
+  )(data: WebsiteData): IO[Result] =
+    Extractor.getPage(data.home).flatMap {
+      case None => Result(domain = data.home.source, duration = data.time).pure
+      case Some(home) =>
+        for {
+          children <- data.children.traverse(Extractor.getPage).map(_.flatten)
+          extracted <- (home :: children).traverse(extractor)
+
+        } yield Result(
+          domain = home.page.address,
+          duration = data.time,
+          extracted = Some(extracted.combineAll),
+          totalChildren = home.page.childPages.size,
+          fetchedChildren = children.size
+        )
+    }
 
   def submit(
       tasks: WorkPoolServer[IO, Task],

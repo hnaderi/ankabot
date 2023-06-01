@@ -15,16 +15,17 @@ import InsertionDAO.*
 import PGInsertionDAO.*
 
 private final class PGInsertionDAO(session: Session[IO]) extends InsertionDAO {
+  private inline def exec[T](l: List[T])(cmd: l.type => Command[l.type]) =
+    if l.isEmpty then IO.unit
+    else session.prepare(cmd(l)).flatMap(_.execute(l)).void
 
   override def insertExtractedTechnology(
       values: List[ExtractedTechnology]
-  ): IO[Unit] =
-    session.prepare(insertExtracted(values)).flatMap(_.execute(values)).void
+  ): IO[Unit] = exec(values)(insertExtracted)
 
   override def insertPricing(
       values: List[TechnologyPricingInsert]
-  ): IO[Unit] =
-    session.prepare(insertPricings(values)).flatMap(_.execute(values)).void
+  ): IO[Unit] = exec(values)(insertPricings)
 
   override def insertResults(
       results: List[ResultInsert]
@@ -34,27 +35,17 @@ private final class PGInsertionDAO(session: Session[IO]) extends InsertionDAO {
       .flatMap(_.stream(results, 100).compile.toList)
 
   override def insertPhones(values: List[PhoneInsert]): IO[Unit] =
-    session
-      .prepare(PGInsertionDAO.insertPhones(values))
-      .flatMap(_.execute(values))
-      .void
+    exec(values)(PGInsertionDAO.insertPhones)
 
   override def insertEmails(values: List[EmailInsert]): IO[Unit] =
-    session
-      .prepare(PGInsertionDAO.insertEmails(values))
-      .flatMap(_.execute(values))
-      .void
+    exec(values)(PGInsertionDAO.insertEmails)
 
   override def insertSocials(values: List[SocialsInsert]): IO[Unit] =
-    session
-      .prepare(PGInsertionDAO.insertSocials(values))
-      .flatMap(_.execute(values))
-      .void
+    exec(values)(PGInsertionDAO.insertSocials)
 
   override def insertTechnology(
       values: List[TechnologyInsert]
-  ): IO[Unit] =
-    session.prepare(insert(values)).flatMap(_.execute(values)).void
+  ): IO[Unit] = exec(values)(insert)
 
 }
 
@@ -67,6 +58,7 @@ object PGInsertionDAO {
     Either.catchNonFatal(URI(s)).leftMap(_.getMessage())
   )(_.toString)
   import scala.jdk.DurationConverters.*
+  private val result_id: Codec[ResultId] = int8
 
   private val duration: Codec[FiniteDuration] =
     interval.imap(_.toScala)(_.toJava)
@@ -78,17 +70,19 @@ object PGInsertionDAO {
     `enum`(_.toString, SocialNetwork.mapping.get, Type("social_network"))
 
   private val result: Codec[ResultInsert] =
-    (uri ~ timestamptz ~ duration ~ bool ~ int4 ~ int4).gimap
+    (uri ~ duration ~ bool ~ int4 ~ int4).gimap
 
   private val technology: Codec[TechnologyInsert] =
     (varchar ~ varchar.opt ~ varchar.opt ~ bool.opt ~ bool.opt).gimap
 
-  private def insert(results: List[ResultInsert]): Query[results.type, UUID] =
+  private def insert(
+      results: List[ResultInsert]
+  ): Query[results.type, ResultId] =
     sql"""
-insert into results ("domain", "date", "duration", "success", "total_children", "fetched_children")
+insert into results ("domain", "duration", "success", "total_children", "fetched_children")
 values ${result.values.list(results)}
 returning id
-""".query(uuid)
+""".query(result_id)
 
   private def insert(techs: List[TechnologyInsert]): Command[techs.type] =
     sql"""
@@ -112,27 +106,27 @@ values ${(varchar ~ pricing).values.list(techs)}
       techs: List[ExtractedTechnology]
   ): Command[techs.type] = sql"""
 insert into extracted_technologies (technology_id, result_id)
-values ${(varchar ~ uuid).values.list(techs)}
+values ${(varchar ~ result_id).values.list(techs)}
 """.command
 
   private def insertPhones(
       techs: List[PhoneInsert]
   ): Command[techs.type] = sql"""
 insert into phones (result_id, value)
-values ${(uuid ~ varchar).values.list(techs)}
+values ${(result_id ~ varchar).values.list(techs)}
 """.command
 
   private def insertEmails(
       techs: List[EmailInsert]
   ): Command[techs.type] = sql"""
 insert into emails (result_id, value)
-values ${(uuid ~ varchar).values.list(techs)}
+values ${(result_id ~ varchar).values.list(techs)}
 """.command
 
   private def insertSocials(
       techs: List[SocialsInsert]
   ): Command[techs.type] = sql"""
 insert into socials (result_id, "type", value)
-values ${(uuid *: socialNetwork *: uri).values.list(techs)}
+values ${(result_id *: socialNetwork *: uri).values.list(techs)}
 """.command
 }

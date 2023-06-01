@@ -9,9 +9,11 @@ import io.circe.syntax.*
 import io.odin.Logger
 
 import java.net.URI
-import scala.util.matching.Regex
 
+type Extractor = ToExtract => IO[ExtractedData]
 object Extractor {
+  def build(patterns: IO[TechnologyMap] = Technology.load): IO[Extractor] =
+    patterns.map(extractors.All(_).io)
 
   def apply(
       input: Stream[IO, WebsiteData],
@@ -21,8 +23,7 @@ object Extractor {
   )(using
       logger: Logger[IO]
   ): Stream[IO, Unit] = for {
-    patterns <- eval(Technology.load)
-    extractor = extractors.All(patterns)
+    extractor <- eval(build())
     metrics <- ExtractionMetricsCollector.printer()
     reporter <- StatusReporter[URI]()
     _ <- input
@@ -35,8 +36,8 @@ object Extractor {
               .traverse(getPage)
               .map(_.flatten)
           )
-          (homeTime, homeX) <- eval(extractor.io(home).timed)
-          (allTime, allX) <- eval(children.traverse(extractor.io).timed).map(
+          (homeTime, homeX) <- eval(extractor(home).timed)
+          (allTime, allX) <- eval(children.traverse(extractor).timed).map(
             (t, ch) => (t + homeTime, ch.combineAll.combine(homeX))
           )
           _ <- eval(
@@ -62,7 +63,7 @@ object Extractor {
       .through(Storage.persist(output))
   } yield ()
 
-  private def getPage(fetch: FetchResult): IO[Option[ToExtract]] =
+  def getPage(fetch: FetchResult): IO[Option[ToExtract]] =
     fetch.result match {
       case Left(_) => IO(None)
       case Right(result) =>

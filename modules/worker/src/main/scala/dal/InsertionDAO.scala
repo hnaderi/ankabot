@@ -13,7 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 
 import InsertionDAO.*
 
-type ResultId = UUID
+type ResultId = Long
 type TechnologyId = String
 
 trait InsertionDAO {
@@ -31,13 +31,12 @@ trait InsertionDAO {
 
   def insertPhones(values: List[PhoneInsert]): IO[Unit]
 
-  def insertResults(results: List[ResultInsert]): IO[List[UUID]]
+  def insertResults(results: List[ResultInsert]): IO[List[ResultId]]
 }
 
 object InsertionDAO {
   final case class ResultInsert(
       domain: URI,
-      date: OffsetDateTime,
       duration: FiniteDuration,
       success: Boolean,
       totalChildren: Int,

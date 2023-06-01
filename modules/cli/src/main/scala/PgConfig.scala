@@ -8,7 +8,7 @@ final case class PgConfig(
     port: Int = 5432,
     username: String = "postgres",
     password: Option[String] = Some("postgres"),
-    database: String = "public"
+    database: String = "postgres"
 )
 
 object PgConfig {
@@ -41,7 +41,7 @@ object PgConfig {
       name = "pg-database",
       env = "POSTGRES_DATABASE",
       help = "postgres database",
-      default = "public"
+      default = "postgres"
     )
   ).mapN(PgConfig(_, _, _, _, _))
 
