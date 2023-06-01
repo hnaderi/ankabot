@@ -1,6 +1,6 @@
 ThisBuild / tlBaseVersion := "0.0"
-ThisBuild / organization := "io.aibees"
-ThisBuild / organizationName := "AI Bees"
+ThisBuild / organization := "dev.hnaderi"
+ThisBuild / organizationName := "Hossein Naderi"
 ThisBuild / startYear := Some(2023)
 ThisBuild / developers := List(
   Developer(
@@ -22,7 +22,7 @@ def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))
     .settings(
       name := s"module-$mname",
-      moduleName := s"knowledge-base-$mname",
+      moduleName := s"ankabot-$mname",
       libraryDependencies ++= Seq(
         "org.scalameta" %% "munit" % "0.7.29" % Test,
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
@@ -101,7 +101,7 @@ lazy val cli = module("cli") {
       dockerExposedVolumes := Seq("/opt/docker/logs"),
       dockerUpdateLatest := true,
       Docker / daemonUserUid := Some("1001"),
-      Docker / daemonUser := "aibees",
+      Docker / daemonUser := "ankabot",
       Docker / maintainer := "Hossein Naderi"
     )
     .enablePlugins(JavaAppPackaging)

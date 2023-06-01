@@ -1,4 +1,4 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 package extractors
 
 import cats.syntax.all.*
@@ -65,14 +65,14 @@ object ContactExtractors {
         .toSet // ++ in.page.texts.flatMap(phonesIn).toSet
     )
 
-  private[knowledgebase] def phonesIn(str: String): Iterator[Contact] =
+  private[ankabot] def phonesIn(str: String): Iterator[Contact] =
     phonePattern
       .findAllIn(str)
       .map(_.trim)
       .filterNot(notAPhoneNumber)
       .map(Contact.Phone(_))
 
-  private[knowledgebase] def emailsIn(str: String): Set[Contact] =
+  private[ankabot] def emailsIn(str: String): Set[Contact] =
     email.findAllIn(str).map(s => Contact.Email(s.trim)).toSet
 
   private val yearPattern = """.*\b(\d{4})\b.*""".r

@@ -1,4 +1,4 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 
 import io.circe.Codec
 import cats.Monoid

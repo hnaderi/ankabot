@@ -1,4 +1,4 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 package worker
 
 import cats.effect.IO

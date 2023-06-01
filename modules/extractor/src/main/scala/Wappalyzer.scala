@@ -1,4 +1,4 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 
 import cats.effect.IO
 import cats.syntax.all.*

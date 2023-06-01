@@ -1,13 +1,13 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 package cli
 
 import cats.effect.IO
 import cats.syntax.all.*
 import fs2.Stream
 import fs2.Stream.*
-import io.aibees.knowledgebase.Storage.stdinSources
-import io.aibees.knowledgebase.db.PgConfig
-import io.aibees.knowledgebase.worker.Persistence
+import dev.hnaderi.ankabot.Storage.stdinSources
+import dev.hnaderi.ankabot.db.PgConfig
+import dev.hnaderi.ankabot.worker.Persistence
 import io.odin.Logger
 import lepus.client.LepusClient
 import natchez.Trace.Implicits.noop

@@ -1,4 +1,4 @@
-package io.aibees.knowledgebase
+package dev.hnaderi.ankabot
 package cli
 
 import cats.syntax.all.*
@@ -7,7 +7,7 @@ import com.monovore.decline.Argument
 import com.monovore.decline.Command
 import com.monovore.decline.Opts
 import fs2.io.file.Path
-import io.aibees.knowledgebase.db.PgConfig
+import dev.hnaderi.ankabot.db.PgConfig
 
 import java.net.URI
 import java.nio.file.{Path as JPath}
