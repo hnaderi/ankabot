@@ -1,20 +1,24 @@
-ThisBuild / tlBaseVersion := "0.0"
-ThisBuild / organization := "dev.hnaderi"
-ThisBuild / organizationName := "Hossein Naderi"
-ThisBuild / startYear := Some(2023)
-ThisBuild / developers := List(
-  Developer(
-    "hnaderi",
-    "Hossein Naderi",
-    "mail@hnaderi.dev",
-    url("https://hnaderi.dev")
+inThisBuild(
+  Seq(
+    tlBaseVersion := "0.0",
+    organization := "dev.hnaderi",
+    organizationName := "Hossein Naderi",
+    startYear := Some(2023),
+    developers := List(
+      Developer(
+        "hnaderi",
+        "Hossein Naderi",
+        "mail@hnaderi.dev",
+        url("https://hnaderi.dev")
+      )
+    ),
+    fork := true,
+    scalaVersion := "3.2.2",
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
+    tlCiMimaBinaryIssueCheck := false
   )
 )
-ThisBuild / fork := true
-ThisBuild / scalaVersion := "3.2.2"
-ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
-ThisBuild / tlCiMimaBinaryIssueCheck := false
 
 lazy val root = project
   .in(file("."))
