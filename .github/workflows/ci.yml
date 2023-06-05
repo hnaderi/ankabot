@@ -138,4 +138,4 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - run: sbt '++ ${{ matrix.scala }}' Docker/publish
+      - run: sbt '++ ${{ matrix.scala }}' cli/Docker/publish
