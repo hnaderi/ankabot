@@ -91,14 +91,14 @@ lazy val cli = module("cli") {
   project
     .dependsOn(scraper, extractor, worker)
     .settings(
-      assembly / assemblyJarName := s"kb",
+      assembly / assemblyJarName := "ankabot",
       assemblyPrependShellScript := Some(
         sbtassembly.AssemblyPlugin.defaultUniversalScript(shebang = false)
       ),
       maintainer := "mail@hnaderi.dev",
-      executableScriptName := "kb",
-      packageName := "kb",
-      Docker / packageName := s"kb-cli",
+      executableScriptName := "ankabot",
+      packageName := "ankabot",
+      Docker / packageName := s"ankabot",
       dockerRepository := sys.env.get("DOCKER_REGISTRY"),
       dockerBaseImage := "openjdk:11-jre-slim",
       dockerExposedPorts := Seq(8080),

@@ -74,7 +74,7 @@ object CLICommand {
       .withDefault(ScrapeBackend.JDK)
   ).mapN(Scraper.Config(_, _, _, _, _, _))
 
-  def apply(): Command[CLICommand] = Command("kb", "Knowledge base CLI")(
+  def apply(): Command[CLICommand] = Command("ankabot", "Ankabot CLI")(
     Opts.subcommands(
       Command("extract", "Extract data") {
         (
