@@ -4,11 +4,11 @@ package worker
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
-import fs2.Chunk
 import dev.hnaderi.ankabot.db.PersistenceLayer
 import dev.hnaderi.ankabot.worker.dal.tables.InsertionDAO
 import dev.hnaderi.ankabot.worker.dal.tables.InsertionDAO.*
 import dev.hnaderi.ankabot.worker.dal.tables.ResultId
+import fs2.Chunk
 import io.odin.Logger
 import skunk.Session
 

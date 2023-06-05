@@ -10,7 +10,7 @@ abstract class CMDApp[T](cmd: Command[T]) extends IOApp {
   protected given logger: Logger[IO]
 
   override final def run(args: List[String]): IO[ExitCode] =
-    cmd.parse(args) match {
+    cmd.parse(args, sys.env) match {
       case Left(value) => IO.println(value).as(ExitCode.Success)
       case Right(value) =>
         for {
