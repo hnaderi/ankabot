@@ -14,14 +14,7 @@ inThisBuild(
     ),
     fork := true,
     scalaVersion := "3.2.2",
-    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
-    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
-    tlCiMimaBinaryIssueCheck := false,
-    githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("cli/Docker/publish"))),
-    githubWorkflowPublishTargetBranches := Seq(
-      RefPredicate.Equals(Ref.Branch("main")),
-      RefPredicate.StartsWith(Ref.Tag("v"))
-    )
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots")
   )
 )
 
