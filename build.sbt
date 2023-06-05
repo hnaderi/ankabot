@@ -16,7 +16,12 @@ inThisBuild(
     scalaVersion := "3.2.2",
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
-    tlCiMimaBinaryIssueCheck := false
+    tlCiMimaBinaryIssueCheck := false,
+    githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("Docker/publish"))),
+    githubWorkflowPublishTargetBranches := Seq(
+      RefPredicate.Equals(Ref.Branch("main")),
+      RefPredicate.StartsWith(Ref.Tag("v"))
+    )
   )
 )
 
@@ -112,6 +117,7 @@ lazy val cli = module("cli") {
     )
     .enablePlugins(JavaAppPackaging)
     .enablePlugins(DockerPlugin)
+    .enablePlugins(K8sDeployment)
 }
 
 addCommandAlias("fmt", "scalafmtAll;scalafmtSbt")
