@@ -33,13 +33,13 @@ inThisBuild(
           name = Some("Setup kubectl")
         ),
         WorkflowStep.Use(
-          UseRef.Public("azure", "k8s-set-context", "v1"),
+          UseRef.Public("azure", "k8s-set-context", "v3"),
           id = Some("configure"),
           name = Some("Set context"),
           params = Map(
             "method" -> "service-account",
             "k8s-url" -> s"$${{ secrets.K8S_URL }}",
-            "k8s-secret" -> s"$${{ secrets.SA_TOKEN }}"
+            "k8s-secret" -> s"$${{ secrets.SA_SECRET }}"
           )
         ),
         WorkflowStep.Run(

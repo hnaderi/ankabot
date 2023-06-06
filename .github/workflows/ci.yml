@@ -169,11 +169,11 @@ jobs:
 
       - name: Set context
         id: configure
-        uses: azure/k8s-set-context@v1
+        uses: azure/k8s-set-context@v3
         with:
           method: service-account
           k8s-url: ${{ secrets.K8S_URL }}
-          k8s-secret: ${{ secrets.SA_TOKEN }}
+          k8s-secret: ${{ secrets.SA_SECRET }}
 
       - name: Deploy to cluster
         id: deploy
