@@ -1,5 +1,7 @@
+import org.typelevel.sbt.gha.JobEnvironment
 inThisBuild(
   Seq(
+    githubWorkflowEnv += "DOCKER_REGISTRY" -> s"ghcr.io/$${{ github.repository_owner }}",
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
     tlCiMimaBinaryIssueCheck := false,
     githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("cli/Docker/publish"))),
@@ -16,6 +18,40 @@ inThisBuild(
       ),
       name = Some("Login to github container registery")
     ),
-    githubWorkflowEnv += "DOCKER_REGISTRY" -> s"ghcr.io/$${{ github.repository_owner }}"
+    githubWorkflowPublishPostamble += WorkflowStep
+      .Sbt(List("k8sManifestGen"), name = Some("Generate k8s manifest")),
+    githubWorkflowGeneratedCI += WorkflowJob(
+      id = "deploy",
+      name = "Deploy",
+      cond = githubWorkflowGeneratedCI.value
+        .find(_.id == "publish")
+        .flatMap(_.cond),
+      steps = List(
+        WorkflowStep.Use(
+          UseRef.Public("azure", "setup-kubectl", "v3"),
+          id = Some("install"),
+          name = Some("Setup kubectl")
+        ),
+        WorkflowStep.Use(
+          UseRef.Public("azure", "k8s-set-context", "v1"),
+          id = Some("configure"),
+          name = Some("Set context"),
+          params = Map(
+            "method" -> "service-account",
+            "k8s-url" -> s"$${{ secrets.K8S_URL }}",
+            "k8s-secret" -> s"$${{ secrets.SA_TOKEN }}"
+          )
+        ),
+        WorkflowStep.Run(
+          id = Some("deploy"),
+          name = Some("Deploy to cluster"),
+          commands = List(
+            "kubectl apply -f modules/cli/target/k8s/manifest.yml"
+          )
+        )
+      ),
+      environment = Some(JobEnvironment("production")),
+      needs = List("publish")
+    )
   )
 )

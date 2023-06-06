@@ -147,3 +147,34 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - run: sbt '++ ${{ matrix.scala }}' cli/Docker/publish
+
+      - name: Generate k8s manifest
+        run: sbt '++ ${{ matrix.scala }}' k8sManifestGen
+
+  deploy:
+    name: Deploy
+    needs: [publish]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.6]
+        java: [temurin@11]
+    runs-on: ${{ matrix.os }}
+    environment: production
+    steps:
+      - name: Setup kubectl
+        id: install
+        uses: azure/setup-kubectl@v3
+
+      - name: Set context
+        id: configure
+        uses: azure/k8s-set-context@v1
+        with:
+          method: service-account
+          k8s-url: ${{ secrets.K8S_URL }}
+          k8s-secret: ${{ secrets.SA_TOKEN }}
+
+      - name: Deploy to cluster
+        id: deploy
+        run: kubectl apply -f modules/cli/target/k8s/manifest.yml

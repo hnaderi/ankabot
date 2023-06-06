@@ -87,18 +87,19 @@ lazy val worker = module("worker") {
     )
 }
 
-def subEnv(prefix: String) = sys.env.filterKeys(_.startsWith(prefix)).map {
-  case (k, v) => (k.substring(prefix.size), v)
-}
-
 lazy val cli = module("cli") {
   project
     .dependsOn(scraper, extractor, worker)
     .enablePlugins(AppPublishing)
     .enablePlugins(K8sDeployment)
     .settings(
-      ankabotNamespace := Some("ankabot"),
-      ankabotNodeSelector := Some(subEnv("NODE_SELECTOR_"))
+      ankabotNodeSelector := sys.env.get("NODE_SELECTOR").flatMap { s =>
+        val pattern = "(.*)=(.*)".r
+
+        val out = s.linesIterator.collect { case pattern(k, v) => (k, v) }.toMap
+
+        if (out.isEmpty) None else Some(out)
+      }
     )
 }
 
