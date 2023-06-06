@@ -93,13 +93,14 @@ lazy val cli = module("cli") {
     .enablePlugins(AppPublishing)
     .enablePlugins(K8sDeployment)
     .settings(
-      ankabotNodeSelector := sys.env.get("NODE_SELECTOR").flatMap { s =>
+      ankabotNodeSelector := sys.env.get("ANKABOT_NODES").flatMap { s =>
         val pattern = "(.*)=(.*)".r
 
         val out = s.linesIterator.collect { case pattern(k, v) => (k, v) }.toMap
 
         if (out.isEmpty) None else Some(out)
-      }
+      },
+      ankabotNamespace := sys.env.get("ANKABOT_NAMESPACE")
     )
 }
 

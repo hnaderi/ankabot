@@ -16,6 +16,8 @@ on:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DOCKER_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  ANKABOT_NODES: ${{ secrets.ANKABOT_NODES }}
+  ANKABOT_NAMESPACE: ${{ secrets.ANKABOT_NAMESPACE }}
 
 jobs:
   build:
@@ -151,6 +153,12 @@ jobs:
       - name: Generate k8s manifest
         run: sbt '++ ${{ matrix.scala }}' k8sManifestGen
 
+      - name: upload manifest
+        uses: actions/upload-artifact@v3
+        with:
+          name: manifest
+          path: modules/cli/target/k8s/manifest.yml
+
   deploy:
     name: Deploy
     needs: [publish]
@@ -163,6 +171,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: production
     steps:
+      - name: upload manifest
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+
       - name: Setup kubectl
         id: install
         uses: azure/setup-kubectl@v3
@@ -177,4 +190,4 @@ jobs:
 
       - name: Deploy to cluster
         id: deploy
-        run: kubectl apply -f modules/cli/target/k8s/manifest.yml
+        run: kubectl apply -f manifest.yml
