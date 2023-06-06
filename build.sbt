@@ -87,30 +87,19 @@ lazy val worker = module("worker") {
     )
 }
 
+def subEnv(prefix: String) = sys.env.filterKeys(_.startsWith(prefix)).map {
+  case (k, v) => (k.substring(prefix.size), v)
+}
+
 lazy val cli = module("cli") {
   project
     .dependsOn(scraper, extractor, worker)
-    .settings(
-      assembly / assemblyJarName := "ankabot",
-      assemblyPrependShellScript := Some(
-        sbtassembly.AssemblyPlugin.defaultUniversalScript(shebang = false)
-      ),
-      maintainer := "mail@hnaderi.dev",
-      executableScriptName := "ankabot",
-      packageName := "ankabot",
-      Docker / packageName := s"ankabot",
-      dockerRepository := sys.env.get("DOCKER_REGISTRY"),
-      dockerBaseImage := "openjdk:11-jre-slim",
-      dockerExposedPorts := Seq(8080),
-      dockerExposedVolumes := Seq("/opt/docker/logs"),
-      dockerUpdateLatest := true,
-      Docker / daemonUserUid := Some("1001"),
-      Docker / daemonUser := "ankabot",
-      Docker / maintainer := "Hossein Naderi"
-    )
-    .enablePlugins(JavaAppPackaging)
-    .enablePlugins(DockerPlugin)
+    .enablePlugins(AppPublishing)
     .enablePlugins(K8sDeployment)
+    .settings(
+      ankabotNamespace := Some("ankabot"),
+      ankabotNodeSelector := Some(subEnv("NODE_SELECTOR_"))
+    )
 }
 
 addCommandAlias("fmt", "scalafmtAll;scalafmtSbt")
