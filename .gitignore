@@ -24,3 +24,7 @@ metals.sbt
 # npm
 node_modules/
 /.direnv/
+*.csv
+*.gz
+seed/
+patterns/
