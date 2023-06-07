@@ -28,6 +28,9 @@ inThisBuild(
       cond = githubWorkflowGeneratedCI.value
         .find(_.id == "publish")
         .flatMap(_.cond),
+      scalas = githubWorkflowScalaVersions.value.toList,
+      oses = githubWorkflowOSes.value.toList,
+      javas = githubWorkflowJavaVersions.value.toList,
       env = Map(
         "ANKABOT_NODES" -> s"$${{ secrets.ANKABOT_NODES }}",
         "ANKABOT_NAMESPACE" -> s"$${{ secrets.ANKABOT_NAMESPACE }}"
