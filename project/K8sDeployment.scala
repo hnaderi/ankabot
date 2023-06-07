@@ -93,16 +93,16 @@ object K8sDeployment extends AutoPlugin {
                 Container(
                   name = "worker",
                   image = (Docker / dockerAlias).value.toString,
-                  command = Seq("service", "start", "-l", "8080"),
+                  args = Seq("service", "start", "-l", "8080"),
                   ports = Seq(ContainerPort(8080, name = "api")),
                   envFrom = ankabotEnvSource.value
                 )
               ),
               initContainers = Seq(
                 Container(
-                  name = "worker",
+                  name = "migration",
                   image = (Docker / dockerAlias).value.toString,
-                  command = Seq("service", "start", "migrate"),
+                  args = Seq("service", "migrate"),
                   envFrom = ankabotEnvSource.value
                 )
               ),
