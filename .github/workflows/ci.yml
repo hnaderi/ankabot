@@ -161,7 +161,7 @@ jobs:
     environment: production
     env:
       ANKABOT_NODES: ${{ secrets.ANKABOT_NODES }}
-      ANKABOT_NAMESPACE: ${{ secrets.ANKABOT_NAMESPACE }}
+      ANKABOT_NAMESPACE: ${{ vars.ANKABOT_NAMESPACE }}
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v3

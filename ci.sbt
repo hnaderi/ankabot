@@ -33,7 +33,7 @@ inThisBuild(
       javas = githubWorkflowJavaVersions.value.toList,
       env = Map(
         "ANKABOT_NODES" -> s"$${{ secrets.ANKABOT_NODES }}",
-        "ANKABOT_NAMESPACE" -> s"$${{ secrets.ANKABOT_NAMESPACE }}"
+        "ANKABOT_NAMESPACE" -> s"$${{ vars.ANKABOT_NAMESPACE }}"
       ),
       steps = githubWorkflowJobSetup.value.toList ::: List(
         WorkflowStep
