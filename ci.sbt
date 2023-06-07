@@ -2,9 +2,7 @@ import org.typelevel.sbt.gha.JobEnvironment
 inThisBuild(
   Seq(
     githubWorkflowEnv ++= Map(
-      "DOCKER_REGISTRY" -> s"ghcr.io/$${{ github.repository_owner }}",
-      "ANKABOT_NODES" -> s"$${{ secrets.ANKABOT_NODES }}",
-      "ANKABOT_NAMESPACE" -> s"$${{ secrets.ANKABOT_NAMESPACE }}"
+      "DOCKER_REGISTRY" -> s"ghcr.io/$${{ github.repository_owner }}"
     ),
     githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
     tlCiMimaBinaryIssueCheck := false,
@@ -23,16 +21,6 @@ inThisBuild(
       name = Some("Login to github container registery")
     ),
     githubWorkflowPublishPostamble ++= Seq(
-      WorkflowStep
-        .Sbt(List("k8sManifestGen"), name = Some("Generate k8s manifest")),
-      WorkflowStep.Use(
-        UseRef.Public("actions", "upload-artifact", "v3"),
-        name = Some("upload manifest"),
-        params = Map(
-          "name" -> "manifest",
-          "path" -> "modules/cli/target/k8s/manifest.yml"
-        )
-      )
     ),
     githubWorkflowGeneratedCI += WorkflowJob(
       id = "deploy",
@@ -40,11 +28,20 @@ inThisBuild(
       cond = githubWorkflowGeneratedCI.value
         .find(_.id == "publish")
         .flatMap(_.cond),
-      steps = List(
+      env = Map(
+        "ANKABOT_NODES" -> s"$${{ secrets.ANKABOT_NODES }}",
+        "ANKABOT_NAMESPACE" -> s"$${{ secrets.ANKABOT_NAMESPACE }}"
+      ),
+      steps = githubWorkflowJobSetup.value.toList ::: List(
+        WorkflowStep
+          .Sbt(List("k8sManifestGen"), name = Some("Generate k8s manifest")),
         WorkflowStep.Use(
-          UseRef.Public("actions", "download-artifact", "v3"),
+          UseRef.Public("actions", "upload-artifact", "v3"),
           name = Some("upload manifest"),
-          params = Map("name" -> "manifest")
+          params = Map(
+            "name" -> "manifest",
+            "path" -> "modules/cli/target/k8s/manifest.yml"
+          )
         ),
         WorkflowStep.Use(
           UseRef.Public("azure", "setup-kubectl", "v3"),
@@ -65,7 +62,7 @@ inThisBuild(
           id = Some("deploy"),
           name = Some("Deploy to cluster"),
           commands = List(
-            "kubectl apply -f manifest.yml"
+            "kubectl apply -f modules/cli/target/k8s/manifest.yml"
           )
         )
       ),
