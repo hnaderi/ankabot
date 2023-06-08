@@ -3,6 +3,7 @@ inThisBuild(
     tlBaseVersion := "0.0",
     organization := "dev.hnaderi",
     organizationName := "Hossein Naderi",
+    licenses := Seq(License.Apache2),
     startYear := Some(2023),
     developers := List(
       Developer(
