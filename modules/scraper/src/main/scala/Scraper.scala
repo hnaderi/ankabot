@@ -27,14 +27,9 @@ object Scraper {
 
   def apply(
       sources: Stream[IO, URI],
-      result: Path,
       config: Config
-  )(using logger: Logger[IO]): Stream[IO, Unit] = for {
-    scraper <- build(config)
-    _ <- sources
-      .parEvalMapUnordered(config.maxConcurrentPage)(scraper)
-      .through(Storage.persist(result))
-  } yield ()
+  )(using logger: Logger[IO]): Stream[IO, WebsiteData] =
+    build(config).flatMap(sources.parEvalMapUnordered(config.maxConcurrentPage))
 
   def build(config: Config)(using logger: Logger[IO]): Stream[IO, Scraper] =
     for {

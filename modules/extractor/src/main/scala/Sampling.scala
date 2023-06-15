@@ -22,9 +22,9 @@ import scala.collection.MapView
 
 object Sampling {
 
-  def scraped(input: Stream[IO, WebsiteData], output: Path)(using
+  def scraped(input: Stream[IO, WebsiteData])(using
       logger: Logger[IO]
-  ): Stream[IO, Unit] = input
+  ): Stream[IO, String] = input
     .parEvalMapUnbounded(d =>
       IO { (d, d.home.result.flatMap(JsoupWebPage(_))) }
     )
@@ -53,11 +53,11 @@ object Sampling {
         }
       }
     )
-    .through(writeCSV(output))
+    .through(writeCSV)
 
-  def extracted(input: Stream[IO, ExperimentData], output: Path)(using
+  def extracted(input: Stream[IO, ExperimentData])(using
       logger: Logger[IO]
-  ): Stream[IO, Unit] = input
+  ): Stream[IO, String] = input
     .through(
       uriSampler(ExtractedCategories.values) { case (sample, data) =>
         import ExtractedCategories.*
@@ -66,7 +66,7 @@ object Sampling {
         else sample
       }
     )
-    .through(writeCSV(output))
+    .through(writeCSV)
 
   private def uriSampler[D, K: Show](cats: Iterable[K], size: Int = 100)(
       handle: (DataSample[K, URI], D) => DataSample[K, URI]
@@ -84,18 +84,16 @@ object Sampling {
         case (a, None)               => a
       }
 
-  private def writeCSV[K: Show](
-      output: Path
-  ): Pipe[IO, DataSample[K, URI], Nothing] = _.flatMap { sample =>
-    val rows = sample.data.toVector.flatMap((cat, vs) =>
-      vs.map(v => Row(NonEmptyList.of(cat.toString, v.toString)))
-    )
-    emits(rows)
-  }
-    .through(
-      fs2.data.csv.encodeGivenHeaders(NonEmptyList.of("category", "url"))
-    )
-    .through(Storage.write(output))
+  private def writeCSV[K: Show]: Pipe[IO, DataSample[K, URI], String] =
+    _.flatMap { sample =>
+      val rows = sample.data.toVector.flatMap((cat, vs) =>
+        vs.map(v => Row(NonEmptyList.of(cat.toString, v.toString)))
+      )
+      emits(rows)
+    }
+      .through(
+        fs2.data.csv.encodeGivenHeaders(NonEmptyList.of("category", "url"))
+      )
 
   final case class SampledDataResults(
       timeout: Set[URI] = Set.empty

@@ -21,7 +21,7 @@ inThisBuild(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(common, scraper, extractor, cli, worker)
+  .aggregate(common, scraper, extractor, cli, worker, files)
 
 def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))
@@ -46,6 +46,19 @@ lazy val common = module("common") {
         "org.gnieh" %% "fs2-data-csv" % "1.7.0",
         "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
         "com.monovore" %% "decline" % "2.4.1"
+      )
+    )
+}
+
+lazy val files = module("files") {
+  project
+    .dependsOn(common)
+    .settings(
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-io" % "3.6.1",
+        "org.gnieh" %% "fs2-data-csv" % "1.7.0",
+        "io.circe" %% "circe-parser" % "0.14.5",
+        "io.laserdisc" %% "fs2-aws-s3" % "6.0.0"
       )
     )
 }
@@ -90,7 +103,7 @@ lazy val worker = module("worker") {
 
 lazy val cli = module("cli") {
   project
-    .dependsOn(scraper, extractor, worker)
+    .dependsOn(scraper, extractor, worker, files)
     .enablePlugins(AppPublishing)
     .enablePlugins(K8sDeployment)
     .settings(

@@ -17,16 +17,15 @@ object Extractor {
 
   def apply(
       input: Stream[IO, WebsiteData],
-      output: Path,
       maxParallel: Int,
       extractChild: Boolean = true
   )(using
       logger: Logger[IO]
-  ): Stream[IO, Unit] = for {
+  ): Stream[IO, ExperimentData] = (for {
     extractor <- eval(build())
     metrics <- ExtractionMetricsCollector.printer()
     reporter <- StatusReporter[URI]()
-    _ <- input
+    jobs <- input
       .map { fetched =>
         for {
           _ <- resource(reporter.report(fetched.home.source))
@@ -59,9 +58,8 @@ object Extractor {
           children = home.page.childPages
         )
       }
-      .parJoin(maxParallel)
-      .through(Storage.persist(output))
-  } yield ()
+  } yield jobs)
+    .parJoin(maxParallel)
 
   def getPage(fetch: FetchResult): IO[Option[ToExtract]] =
     fetch.result match {

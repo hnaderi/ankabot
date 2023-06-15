@@ -28,7 +28,7 @@ object WebApplication {
 
   private def toURI(using Logger[IO]): Pipe[IO, Byte, URI] =
     _.through(fs2.text.utf8.decode)
-      .through(Storage.decodeSources)
+      .through(Helpers.decodeSources)
 
   def routes(publisher: TaskPoolPublisher)(using Logger[IO]) =
     HttpRoutes.of[IO] {

@@ -11,9 +11,7 @@ import java.nio.file.{Files => JFiles}
 import java.nio.file.{Path => JPath}
 
 object Main extends IOApp.Simple {
-  override def run: IO[Unit] = Wappalyzer(
-    Path("/storage/projects/ai-bees/knowledge-base/patterns")
-  )
+  override def run: IO[Unit] = Wappalyzer(Path("patterns"))
     .map(_.asJson.noSpaces)
     .flatMap(out =>
       IO.blocking(

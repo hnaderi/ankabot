@@ -26,34 +26,30 @@ object Main extends CMDApp(CLICommand()) {
 
       Extractor(
         input = input,
-        output = output,
         maxParallel = 3 * this.computeWorkerThreadCount / 4,
         extractChild = children
-      )
+      ).through(Storage.persist(output))
+
     case cmd: CLICommand.Scrape =>
       import cmd.*
       val input =
         if inputs.isEmpty then Storage.stdinSources
         else emits(inputs).flatMap(Storage.sources)
 
-      Scraper(
-        input,
-        output,
-        cmd.config
-      )
+      Scraper(input, cmd.config).through(Storage.persist(output))
     case CLICommand.Sample(inputs, InputType.Scraped, output) =>
       val input =
         if inputs.isEmpty then Storage.stdinResults[WebsiteData]
         else emits(inputs).flatMap(Storage.load[WebsiteData])
 
-      Sampling.scraped(input, output)
+      Sampling.scraped(input).through(Storage.write(output))
 
     case CLICommand.Sample(inputs, InputType.Extracted, output) =>
       val input =
         if inputs.isEmpty then Storage.stdinResults[ExperimentData]
         else emits(inputs).flatMap(Storage.load[ExperimentData])
 
-      Sampling.extracted(input, output)
+      Sampling.extracted(input).through(Storage.write(output))
 
     case CLICommand.Inspect(inputs) =>
       val input =

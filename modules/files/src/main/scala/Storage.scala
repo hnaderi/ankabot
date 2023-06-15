@@ -32,16 +32,10 @@ object Storage {
       .flatMap(fromEither(_))
 
   def sources(path: Path)(using Logger[IO]): Stream[IO, URI] =
-    read(path).through(decodeSources)
+    read(path).through(Helpers.decodeSources)
 
   def stdinSources(using Logger[IO]): Stream[IO, URI] =
-    stdin.through(decodeSources)
-
-  def decodeSources(using logger: Logger[IO]): Pipe[IO, String, URI] =
-    _.through(fs2.text.lines)
-      .filterNot(_.isBlank())
-      .evalTap(logger.debug(_))
-      .through(toUri)
+    stdin.through(Helpers.decodeSources)
 
   def persist[T: Encoder](path: Path): Pipe[IO, T, Nothing] =
     _.map(_.asJson.noSpaces)
@@ -67,17 +61,4 @@ object Storage {
       else in
     text.through(fs2.text.utf8.decode)
   }
-
-  private def toUri(using logger: Logger[IO]): Pipe[IO, String, URI] =
-    _.flatMap { s =>
-      val uri =
-        if (s.startsWith("http"))
-        then Either.catchNonFatal(URI(s))
-        else Either.catchNonFatal(URI(s"http://$s"))
-
-      uri match {
-        case Right(value) => emit(value)
-        case Left(err)    => exec(logger.warn("Invalid source!", err))
-      }
-    }
 }
