@@ -15,7 +15,7 @@ import skunk.Session
 type Persistence = Chunk[Worker.Result] => IO[Unit]
 object Persistence {
   def migrate(pool: Resource[IO, Session[IO]])(using Logger[IO]) = for {
-    _ <- pool.use(PersistenceLayer.migrate(_, "db")("0"))
+    _ <- pool.use(PersistenceLayer.migrate(_, "db")("types", "tables"))
     tech <- Technology.load
     techI = tech
       .map((k, v) =>
@@ -48,7 +48,7 @@ object Persistence {
             ResultInsert(
               domain = d.domain,
               duration = d.duration,
-              success = d.extracted.isDefined,
+              fetchResult = d.fetchResult,
               totalChildren = d.totalChildren,
               fetchedChildren = d.fetchedChildren
             )

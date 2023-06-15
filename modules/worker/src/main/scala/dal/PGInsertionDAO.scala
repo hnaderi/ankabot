@@ -4,6 +4,8 @@ package worker.dal.tables
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.syntax.all.*
+import dev.hnaderi.ankabot.worker.Worker.FetchRes
+import dev.hnaderi.ankabot.worker.Worker.FetchResultType
 import skunk.*
 
 import java.net.URI
@@ -69,8 +71,14 @@ object PGInsertionDAO {
   private val socialNetwork: Codec[SocialNetwork] =
     `enum`(_.toString, SocialNetwork.mapping.get, Type("social_network"))
 
+  private val fetchResultType: Codec[FetchResultType] =
+    `enum`(_.toString, FetchResultType.mapping.get, Type("fetch_result"))
+
+  private val fetchResult: Codec[FetchRes] =
+    (fetchResultType *: int4.opt).gimap
+
   private val result: Codec[ResultInsert] =
-    (uri ~ duration ~ bool ~ int4 ~ int4).gimap
+    (uri ~ duration ~ fetchResult ~ int4 ~ int4).gimap
 
   private val technology: Codec[TechnologyInsert] =
     (varchar ~ varchar.opt ~ varchar.opt ~ bool.opt ~ bool.opt).gimap
@@ -79,7 +87,7 @@ object PGInsertionDAO {
       results: List[ResultInsert]
   ): Query[results.type, ResultId] =
     sql"""
-insert into results ("domain", "duration", "success", "total_children", "fetched_children")
+insert into results ("domain", "duration", "fetch_result", "fetch_status", "total_children", "fetched_children")
 values ${result.values.list(results)}
 returning id
 """.query(result_id)

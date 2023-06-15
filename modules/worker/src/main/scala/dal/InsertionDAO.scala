@@ -12,6 +12,7 @@ import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
 import InsertionDAO.*
+import dev.hnaderi.ankabot.worker.Worker.FetchRes
 
 type ResultId = Long
 type TechnologyId = String
@@ -38,7 +39,7 @@ object InsertionDAO {
   final case class ResultInsert(
       domain: URI,
       duration: FiniteDuration,
-      success: Boolean,
+      fetchResult: FetchRes,
       totalChildren: Int,
       fetchedChildren: Int
   )

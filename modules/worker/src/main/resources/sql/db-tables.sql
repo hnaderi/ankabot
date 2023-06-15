@@ -1,20 +1,5 @@
 DO $$ begin
 
-create type social_network as enum (
-  'Linkedin',
-  'Telegram',
-  'Instagram',
-  'Twitter',
-  'Facebook',
-  'Youtube'
-);
-
-create type pricing as enum (
-  'Low', 'Mid', 'High',
-  'Freemium', 'Onetime', 'Recurring', 'PriceOnAsking', 'PayAsYouGo'
-);
-
-
 CREATE TABLE IF NOT EXISTS technologies (
   id varchar NOT NULL,
   description varchar NULL,
@@ -29,12 +14,13 @@ CREATE TABLE IF NOT EXISTS results (
   "domain" varchar NOT NULL,
   "date" timestamptz NOT NULL DEFAULT now(),
   duration interval NOT NULL,
-  success bool NOT NULL,
+  fetch_result fetch_result NOT NULL,
+  fetch_status int4 NULL,
   total_children int4 NOT NULL,
   fetched_children int4 NOT NULL
 );
 CREATE INDEX IF NOT EXISTS results_date_idx ON results USING btree (date);
-CREATE INDEX IF NOT EXISTS results_status_idx ON results USING btree (success);
+CREATE INDEX IF NOT EXISTS results_fetch_result_idx ON results USING btree (fetch_result);
 
 CREATE TABLE IF NOT EXISTS extracted_technologies (
   technology_id varchar NOT NULL,
@@ -68,6 +54,4 @@ CREATE TABLE IF NOT EXISTS technology_pricing (
   CONSTRAINT technology_pricing_fk FOREIGN KEY (technology_id) REFERENCES technologies(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
-EXCEPTION
-    WHEN duplicate_object THEN null;
 END $$;
