@@ -109,7 +109,7 @@ object Main extends CMDApp(CLICommand()) {
         user = pg.username,
         password = pg.password,
         database = pg.database,
-        max = 10,
+        max = pg.poolSize,
         strategy = Strategy.SearchPath
       )
 }

@@ -8,7 +8,8 @@ final case class PgConfig(
     port: Int = 5432,
     username: String = "postgres",
     password: Option[String] = Some("postgres"),
-    database: String = "postgres"
+    database: String = "postgres",
+    poolSize: Int = 10
 )
 
 object PgConfig {
@@ -42,7 +43,13 @@ object PgConfig {
       env = "POSTGRES_DATABASE",
       help = "postgres database",
       default = "postgres"
+    ),
+    opt(
+      name = "pg-pool-size",
+      env = "POSTGRES_POOL_SIZE",
+      help = "postgres connection pool size",
+      default = 10
     )
-  ).mapN(PgConfig(_, _, _, _, _))
+  ).mapN(PgConfig(_, _, _, _, _, _))
 
 }
