@@ -17,7 +17,7 @@
         devShell = pkgs.devshell.mkShell {
           imports = [ typelevel-nix.typelevelShell ];
           name = "ankabot-shell";
-          typelevelShell = { jdk.package = pkgs.temurin-bin-11; };
+          typelevelShell = { jdk.package = pkgs.jdk17; };
           packages = [ pkgs.visualvm ];
         };
       });

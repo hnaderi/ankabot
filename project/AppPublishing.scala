@@ -24,7 +24,7 @@ object AppPublishing extends AutoPlugin {
     packageName := "ankabot",
     Docker / packageName := s"ankabot",
     dockerRepository := sys.env.get("DOCKER_REGISTRY"),
-    dockerBaseImage := "openjdk:11-jre-slim",
+    dockerBaseImage := "eclipse-temurin:17-jre",
     dockerExposedPorts := Seq(8080),
     dockerExposedVolumes := Seq("/opt/docker/logs"),
     dockerUpdateLatest := true,

@@ -4,7 +4,7 @@ inThisBuild(
     githubWorkflowEnv ++= Map(
       "DOCKER_REGISTRY" -> s"ghcr.io/$${{ github.repository_owner }}"
     ),
-    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11")),
+    githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17")),
     tlCiMimaBinaryIssueCheck := false,
     githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("cli/Docker/publish"))),
     githubWorkflowPublishTargetBranches := Seq(
