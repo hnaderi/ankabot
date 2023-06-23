@@ -6,10 +6,8 @@ import fs2.io.file.Files
 import fs2.io.file.Path
 import io.circe.Decoder.OptionDecoder
 import io.circe.*
-import io.circe.derivation.ConfiguredEnumCodec
 import io.circe.parser.decode
 
-import java.net.URI
 import scala.util.matching.Regex
 
 object Wappalyzer {

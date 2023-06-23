@@ -4,15 +4,13 @@ package worker.dal.tables
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.syntax.all.*
+import dev.hnaderi.ankabot.worker.Worker.FetchRes
 import skunk.Session
 
 import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
 import InsertionDAO.*
-import dev.hnaderi.ankabot.worker.Worker.FetchRes
 
 type ResultId = Long
 type TechnologyId = String

@@ -1,8 +1,6 @@
 package dev.hnaderi.ankabot
 package db
 
-import cats.effect.Async
-import cats.effect.Resource
 import cats.effect.Sync
 import cats.implicits.*
 import io.odin.Logger

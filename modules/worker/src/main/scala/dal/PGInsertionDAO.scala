@@ -1,7 +1,6 @@
 package dev.hnaderi.ankabot
 package worker.dal.tables
 
-import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.syntax.all.*
 import dev.hnaderi.ankabot.worker.Worker.FetchRes
@@ -9,8 +8,6 @@ import dev.hnaderi.ankabot.worker.Worker.FetchResultType
 import skunk.*
 
 import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 
 import InsertionDAO.*

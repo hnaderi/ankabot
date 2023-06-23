@@ -3,7 +3,6 @@ package dev.hnaderi.ankabot
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import cats.effect.kernel.Resource
-import cats.syntax.all.*
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger

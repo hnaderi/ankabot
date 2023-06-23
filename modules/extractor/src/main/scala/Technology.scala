@@ -4,7 +4,6 @@ import cats.effect.IO
 import io.circe.*
 import io.circe.derivation.ConfiguredEnumCodec
 
-import java.net.URI
 import scala.util.matching.Regex
 
 final case class Technology(

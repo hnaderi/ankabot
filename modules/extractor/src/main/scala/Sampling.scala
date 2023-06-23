@@ -3,18 +3,13 @@ package dev.hnaderi.ankabot
 import cats.Show
 import cats.data.NonEmptyList
 import cats.effect.IO
-import cats.syntax.all.*
 import fs2.Pipe
 import fs2.Stream
 import fs2.Stream.*
-import fs2.data.csv.CsvRowEncoder
 import fs2.data.csv.Row
-import fs2.data.csv.RowEncoder
-import fs2.io.file.Path
 import io.circe.Codec
 import io.circe.KeyEncoder
 import io.circe.derivation.ConfiguredEnumCodec
-import io.circe.syntax.*
 import io.odin.Logger
 
 import java.net.URI

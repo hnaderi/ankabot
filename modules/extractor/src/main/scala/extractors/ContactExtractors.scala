@@ -3,8 +3,6 @@ package extractors
 
 import cats.syntax.all.*
 
-import java.net.URI
-
 object ContactExtractors {
   val links: DataExtractor = in =>
     ExtractedData(

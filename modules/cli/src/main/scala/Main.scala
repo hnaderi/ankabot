@@ -3,11 +3,11 @@ package cli
 
 import cats.effect.IO
 import cats.syntax.all.*
-import fs2.Stream
-import fs2.Stream.*
 import dev.hnaderi.ankabot.Storage.stdinSources
 import dev.hnaderi.ankabot.db.PgConfig
 import dev.hnaderi.ankabot.worker.Persistence
+import fs2.Stream
+import fs2.Stream.*
 import io.odin.Logger
 import lepus.client.LepusClient
 import natchez.Trace.Implicits.noop

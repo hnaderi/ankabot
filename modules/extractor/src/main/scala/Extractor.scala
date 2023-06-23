@@ -4,8 +4,6 @@ import cats.effect.IO
 import cats.syntax.all.*
 import fs2.Stream
 import fs2.Stream.*
-import fs2.io.file.Path
-import io.circe.syntax.*
 import io.odin.Logger
 
 import java.net.URI

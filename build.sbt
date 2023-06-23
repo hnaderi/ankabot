@@ -15,7 +15,8 @@ inThisBuild(
     ),
     fork := true,
     scalaVersion := "3.3.0",
-    resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    scalacOptions += "-Wunused:all"
   )
 )
 

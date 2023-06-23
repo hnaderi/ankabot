@@ -2,8 +2,6 @@ package dev.hnaderi.ankabot
 
 import cats.effect.IO
 import cats.effect.IOApp
-import cats.syntax.all.*
-import fs2.io.file.Files
 import fs2.io.file.Path
 import io.circe.syntax.*
 

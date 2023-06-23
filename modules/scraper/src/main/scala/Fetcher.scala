@@ -2,12 +2,9 @@ package dev.hnaderi.ankabot
 
 import cats.effect.IO
 import cats.effect.std.Semaphore
-import cats.effect.syntax.all.*
 import io.odin.Logger
 import org.http4s.Header
-import org.http4s.MediaType
 import org.http4s.Method.GET
-import org.http4s.Request
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
@@ -37,7 +34,7 @@ object Fetcher {
   private def create(
       client: Client[IO],
       timeoutDuration: FiniteDuration
-  )(using logger: Logger[IO]): Fetcher =
+  )(using Logger[IO]): Fetcher =
     juri =>
       buildUri(juri)
         .flatMap { uri =>
@@ -53,7 +50,7 @@ object Fetcher {
                 .map(URI.create)
                 .getOrElse(juri)
 
-              resp.bodyText.compile.string.timed.map((time, body) =>
+              resp.bodyText.compile.string.map(body =>
                 FetchedData(
                   url = baseURI,
                   resp.headers.headers.map(h => (h.name.toString, h.value)),

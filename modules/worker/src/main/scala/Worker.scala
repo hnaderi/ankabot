@@ -48,7 +48,7 @@ object Worker {
       .evalMap(WorkPoolChannel.worker(tasks, _))
     extract = Worker.extract(extractor)
 
-    out <- pool.jobs.parEvalMapUnordered(config.maxConcurrentPage) { job =>
+    _ <- pool.jobs.parEvalMapUnordered(config.maxConcurrentPage) { job =>
       for {
         scraped <- job.payload.traverse(scrape)
 

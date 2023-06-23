@@ -3,7 +3,6 @@ package extractors
 
 import cats.syntax.all.*
 
-import java.net.URI
 import scala.util.matching.Regex
 
 private final class TechnologyExtractor(technologyMap: TechnologyMap)
@@ -62,7 +61,7 @@ private final class TechnologyExtractor(technologyMap: TechnologyMap)
 
   def apply(target: ToExtract): ExtractedData = ExtractedData(
     technologies = technologies
-      .filter((name, tech) =>
+      .filter((_, tech) =>
         import tech.patterns
         matchesHeader(target.data, patterns) ||
         matchesCookies(target.data, patterns) ||

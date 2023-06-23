@@ -1,14 +1,9 @@
 package dev.hnaderi.ankabot
 
 import cats.effect.IO
-import cats.effect.syntax.all.*
 import cats.syntax.all.*
-import com.monovore.decline.Argument
-import fs2.Pipe
 import fs2.Stream
 import fs2.Stream.*
-import fs2.io.file.Path
-import io.circe.syntax.*
 import io.odin.Logger
 
 import java.net.URI

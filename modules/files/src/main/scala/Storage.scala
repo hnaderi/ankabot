@@ -8,7 +8,6 @@ import fs2.io.file.Files
 import fs2.io.file.Path
 import io.circe.Decoder
 import io.circe.Encoder
-import io.circe.Json
 import io.circe.syntax.*
 import io.odin.Logger
 
