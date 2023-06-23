@@ -7,19 +7,19 @@ services:
       - POSTGRES_PASSWORD=postgres
     ports:
       - 5432:5432
-    volumes:
-      - pg_data:/var/lib/postgresql/data
+    # volumes:
+    #   - pg_data:/var/lib/postgresql/data
   rabbit:
     image: rabbitmq:3-management
     #NOTE that hostname is crucial for persistent to work
     hostname: rabbit-node
-    volumes:
-      - rabbit:/var/lib/rabbitmq:rw
+    # volumes:
+    #   - rabbit:/var/lib/rabbitmq:rw
     ports:
       - 5672:5672
       - 15672:15672
   worker:
-    image: kb-cli:latest
+    image: ankabot:latest
     command: service start -l 8080
     environment:
       - POSTGRES_HOST=postgres
@@ -27,6 +27,6 @@ services:
     deploy:
       replicas: 3
     restart: unless-stopped
-volumes:
-  pg_data:
-  rabbit:
+# volumes:
+#   pg_data:
+#   rabbit:
