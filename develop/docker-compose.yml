@@ -18,6 +18,19 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+  minio:
+    image: quay.io/minio/minio:latest
+    entrypoint:
+      - /bin/bash
+      - -c
+    command:
+      - minio server /data --console-address :9090
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=12345678
+    ports:
+      - 9000:9000
+      - 9090:9090
   worker:
     image: ankabot:latest
     command: service start -l 8080

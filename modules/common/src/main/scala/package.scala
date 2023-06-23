@@ -5,8 +5,11 @@ import cats.syntax.all.*
 import fs2.Pipe
 import fs2.Stream.*
 import io.odin.Logger
+import scodec.bits.ByteVector
 
 import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 
 object Helpers {
   private def toUri(using logger: Logger[IO]): Pipe[IO, String, URI] =
@@ -27,4 +30,18 @@ object Helpers {
       .filterNot(_.isBlank())
       .evalTap(logger.debug(_))
       .through(toUri)
+
+  private val md5 = "MD5"
+  def md5Hex(str: String): String = {
+    val digest = MessageDigest.getInstance(md5);
+    digest.update(str.getBytes(StandardCharsets.UTF_8))
+
+    val out = digest.digest()
+
+    ByteVector.view(out).toBase58
+  }
+}
+
+extension (s: String) {
+  inline def md5Hash: String = Helpers.md5Hex(s)
 }

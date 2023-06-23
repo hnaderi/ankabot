@@ -15,8 +15,10 @@ import fs2.aws.s3.models.Models.PartSizeMB
 import fs2.io.file.Files
 import fs2.io.file.Path
 import io.laserdisc.pure.s3.tagless.Interpreter
+import io.odin.Logger
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 
 import java.net.URI
@@ -33,40 +35,30 @@ object ObjectStorage {
         .builder()
         .credentialsProvider(
           StaticCredentialsProvider.create(
-            AwsBasicCredentials
-              .create(credentials.accessKey, credentials.secretKey)
+            AwsBasicCredentials.create(
+              credentials.accessKey,
+              credentials.secretKey
+            )
           )
         )
         .endpointOverride(endpoint)
+        .region(Region.US_EAST_1)
+        .forcePathStyle(true)
     )
     .map(S3.create)
 
   def apply(
       s3: S3[IO],
       storage: BatchStorage,
-      bucket: NonEmptyString,
+      bucketName: NonEmptyString,
       objPrefix: NonEmptyString,
       partSize: PartSizeMB
-  ): Stream[IO, ObjectStorage] = for {
-    toUpload <- eval(Queue.unbounded[IO, Path])
-    obj = ObjectStorageImpl(
-      s3,
-      storage,
-      BucketName(bucket),
-      objPrefix,
-      partSize
-    )
+  )(using logger: Logger[IO]): IO[ObjectStorage] = for {
 
-    _ <- obj.upload.spawn
-  } yield obj
+    toUpload <- Queue.unbounded[IO, Path]
+  } yield new ObjectStorage {
 
-  private final class ObjectStorageImpl(
-      s3: S3[IO],
-      storage: BatchStorage,
-      bucket: BucketName,
-      objPrefix: NonEmptyString,
-      partSize: PartSizeMB
-  ) extends ObjectStorage {
+    private val bucket = BucketName(bucketName)
     private def toNS(str: String) =
       IO.fromEither(
         NonEmptyString
@@ -81,15 +73,23 @@ object ObjectStorage {
         .map(FileKey(_))
         .flatMap(s3.readFile(bucket, _))
 
-    def upload: Stream[IO, Nothing] = {
+    override def upload: Stream[IO, Nothing] = {
 
       def readConcat(batch: BatchFile): Stream[IO, Byte] =
         emits(batch.content).flatMap(Files[IO].readAll)
 
       def upload(batch: BatchFile): Stream[IO, Nothing] =
-        readConcat(batch)
-          .through(s3.uploadFileMultipart(bucket, FileKey(objPrefix), partSize))
-          .drain ++ exec(storage.clean(batch))
+        val name = batch.content.mkString.md5Hash
+        exec(logger.info(s"Uploading ${batch.file} ...")) ++
+          readConcat(batch)
+            .through(
+              s3.uploadFileMultipart(
+                bucket,
+                FileKey(objPrefix.append(name)),
+                partSize
+              )
+            )
+            .drain ++ exec(storage.clean(batch))
 
       storage.wips.flatMap(upload)
     }
@@ -104,4 +104,5 @@ object ObjectStorage {
 trait ObjectStorage {
   def write: Pipe[IO, Byte, Nothing]
   def read(name: String): Stream[IO, Byte]
+  def upload: Stream[IO, Nothing]
 }
