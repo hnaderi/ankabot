@@ -14,7 +14,7 @@ inThisBuild(
       )
     ),
     fork := true,
-    scalaVersion := "3.2.2",
+    scalaVersion := "3.3.0",
     resolvers ++= Resolver.sonatypeOssRepos("snapshots")
   )
 )
@@ -28,25 +28,18 @@ def module(mname: String): Project => Project =
     .settings(
       name := s"module-$mname",
       moduleName := s"ankabot-$mname",
-      libraryDependencies ++= Seq(
-        "org.scalameta" %% "munit" % "0.7.29" % Test,
-        "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
-      )
+      libraryDependencies ++= Dependencies.test
     )
 
 lazy val common = module("common") {
   project
     .settings(
-      libraryDependencies ++= Seq(
-        "org.typelevel" %% "cats-core" % "2.9.0",
-        "org.typelevel" %% "cats-effect" % "3.4.9",
-        "co.fs2" %% "fs2-io" % "3.6.1",
-        "io.circe" %% "circe-generic" % "0.14.5",
-        "io.circe" %% "circe-parser" % "0.14.5",
-        "org.gnieh" %% "fs2-data-csv" % "1.7.0",
-        "com.github.valskalla" %% "odin-slf4j" % "0.13.0",
-        "com.monovore" %% "decline" % "2.4.1"
-      )
+      libraryDependencies ++=
+        Dependencies.effect ++
+          Dependencies.circe ++
+          Dependencies.fs2CSV ++
+          Dependencies.decline ++
+          Dependencies.odin
     )
 }
 
@@ -54,12 +47,7 @@ lazy val files = module("files") {
   project
     .dependsOn(common)
     .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-io" % "3.6.1",
-        "org.gnieh" %% "fs2-data-csv" % "1.7.0",
-        "io.circe" %% "circe-parser" % "0.14.5",
-        "io.laserdisc" %% "fs2-aws-s3" % "6.0.0"
-      )
+      libraryDependencies ++= Dependencies.effect ++ Dependencies.fs2CSV ++ Dependencies.circe ++ Dependencies.s3
     )
 }
 
@@ -67,9 +55,7 @@ lazy val jsoup = module("jsoup") {
   project
     .dependsOn(common)
     .settings(
-      libraryDependencies ++= Seq(
-        "org.jsoup" % "jsoup" % "1.15.4"
-      )
+      libraryDependencies ++= Dependencies.jsoup
     )
 }
 
@@ -77,10 +63,7 @@ lazy val scraper = module("scraper") {
   project
     .dependsOn(common, jsoup)
     .settings(
-      libraryDependencies ++= Seq(
-        "org.http4s" %% "http4s-ember-client" % "0.23.19",
-        "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-5-999d1cd-SNAPSHOT"
-      )
+      libraryDependencies ++= Dependencies.emberClient ++ Dependencies.jdkClient
     )
 }
 
@@ -92,12 +75,8 @@ lazy val worker = module("worker") {
   project
     .dependsOn(scraper, extractor)
     .settings(
-      libraryDependencies ++= Seq(
-        "org.tpolecat" %% "skunk-core" % "0.5.1",
-        "dev.hnaderi" %% "lepus-std" % "0.3.0",
-        "org.http4s" %% "http4s-dsl" % "0.23.19",
-        "org.http4s" %% "http4s-ember-server" % "0.23.19"
-      )
+      libraryDependencies ++=
+        Dependencies.skunk ++ Dependencies.lepus ++ Dependencies.emberServer
     )
 }
 
