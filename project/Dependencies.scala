@@ -29,7 +29,7 @@ object Dependencies {
   )
 
   val lepus = Seq("dev.hnaderi" %% "lepus-std" % "0.3.0")
-  val skunk = Seq("org.tpolecat" %% "skunk-core" % "0.5.1")
+  val skunk = Seq("org.tpolecat" %% "skunk-core" % "0.6.0")
 
   val test = Seq(
     "org.scalameta" %% "munit" % "0.7.29" % Test,
