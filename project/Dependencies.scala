@@ -10,7 +10,7 @@ object Dependencies {
     "io.circe" %% "circe-generic" % "0.14.5",
     "io.circe" %% "circe-parser" % "0.14.5"
   )
-  val fs2CSV = Seq("org.gnieh" %% "fs2-data-csv" % "1.7.0")
+  val fs2CSV = Seq("org.gnieh" %% "fs2-data-csv" % "1.7.1")
 
   val decline = Seq("com.monovore" %% "decline" % "2.4.1")
   val odin = Seq("com.github.valskalla" %% "odin-slf4j" % "0.13.0")
