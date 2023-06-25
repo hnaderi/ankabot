@@ -28,7 +28,7 @@ object Dependencies {
     "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-5-999d1cd-SNAPSHOT"
   )
 
-  val lepus = Seq("dev.hnaderi" %% "lepus-std" % "0.4.0")
+  val lepus = Seq("dev.hnaderi" %% "lepus-std" % "0.3.0")
   val skunk = Seq("org.tpolecat" %% "skunk-core" % "0.5.1")
 
   val test = Seq(
