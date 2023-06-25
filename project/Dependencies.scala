@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val effect = Seq(
     "org.typelevel" %% "cats-core" % "2.9.0",
-    "org.typelevel" %% "cats-effect" % "3.5.0",
+    "org.typelevel" %% "cats-effect" % "3.5.1",
     "co.fs2" %% "fs2-io" % "3.7.0"
   )
   val circe = Seq(
