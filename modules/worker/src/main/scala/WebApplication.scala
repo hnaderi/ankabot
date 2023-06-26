@@ -34,7 +34,7 @@ object WebApplication {
     HttpRoutes.of[IO] {
       case req @ POST -> Root :? Source(url) +& Batch(batch) =>
         def submit(input: Stream[IO, Byte]) =
-          Worker
+          JobRunner
             .submit(
               publisher,
               input.through(toURI),

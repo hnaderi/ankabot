@@ -68,7 +68,7 @@ object Main extends CMDApp(CLICommand()) {
             (db, con) <- resource(persist.parProduct(connect(rmq)))
             ws = webPort.fold(never[IO])(port =>
               exec(
-                worker.Worker
+                worker.JobRunner
                   .publisher(con)
                   .flatMap(worker.WebApplication(_, port))
                   .useForever
@@ -87,7 +87,7 @@ object Main extends CMDApp(CLICommand()) {
           val input = file.fold(stdinSources)(Storage.sources)
 
           resource(publisher(rmq))
-            .flatMap(worker.Worker.submit(_, input, batchSize))
+            .flatMap(worker.JobRunner.submit(_, input, batchSize))
       }
   }
 
@@ -99,7 +99,7 @@ object Main extends CMDApp(CLICommand()) {
   )
 
   private def publisher(rmq: RabbitMQConfig) =
-    connect(rmq).flatMap(worker.Worker.publisher(_))
+    connect(rmq).flatMap(worker.JobRunner.publisher(_))
 
   private def connect(pg: PgConfig) =
     logger.info(s"Connecting to postgres db: ${pg.database}").toResource *>
