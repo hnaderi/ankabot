@@ -74,7 +74,7 @@ lazy val extractor = module("extractor") {
 
 lazy val worker = module("worker") {
   project
-    .dependsOn(scraper, extractor)
+    .dependsOn(scraper, extractor, files)
     .settings(
       libraryDependencies ++=
         Dependencies.skunk ++ Dependencies.lepus ++ Dependencies.emberServer

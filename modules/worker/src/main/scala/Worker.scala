@@ -3,6 +3,7 @@ package worker
 
 import cats.effect.IO
 import cats.syntax.all.*
+import fs2.Chunk
 import fs2.Stream
 import io.odin.Logger
 import lepus.client.Connection
@@ -10,6 +11,7 @@ import lepus.client.Connection
 import java.net.URI
 import scala.concurrent.duration.*
 
+type Persistence = Chunk[Worker.Result] => IO[Unit]
 object Worker {
   def apply(
       con: Connection[IO],
@@ -37,6 +39,7 @@ object Worker {
       domain: URI,
       duration: FiniteDuration,
       fetchResult: FetchRes,
+      raw: List[ToExtract] = Nil,
       extracted: Option[ExtractedData] = None,
       totalChildren: Int = 0,
       fetchedChildren: Int = 0
@@ -55,9 +58,7 @@ object Worker {
 
   final case class FetchRes(result: FetchResultType, status: Option[Int])
 
-  private def extract(
-      extractor: Extractor
-  )(data: WebsiteData): IO[Result] =
+  private def extract(extractor: Extractor)(data: WebsiteData): IO[Result] =
     Extractor.getPage(data.home).flatMap {
       case None =>
         Result(
@@ -68,13 +69,15 @@ object Worker {
       case Some(home) =>
         for {
           children <- data.children.traverse(Extractor.getPage).map(_.flatten)
-          extracted <- (home :: children).traverse(extractor)
+          toExtract = home :: children
+          extracted <- toExtract.traverse(extractor)
 
         } yield Result(
           domain = home.page.address,
           duration = data.time,
           fetchResult =
             FetchRes(FetchResultType.Success, home.data.status.some),
+          raw = toExtract,
           extracted = Some(extracted.combineAll),
           totalChildren = home.page.childPages.size,
           fetchedChildren = children.size

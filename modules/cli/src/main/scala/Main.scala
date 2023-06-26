@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.syntax.all.*
 import dev.hnaderi.ankabot.Storage.stdinSources
 import dev.hnaderi.ankabot.db.PgConfig
-import dev.hnaderi.ankabot.worker.Persistence
+import dev.hnaderi.ankabot.worker.DBPersistence
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
@@ -61,9 +61,9 @@ object Main extends CMDApp(CLICommand()) {
     case CLICommand.Service(cmd) =>
       cmd match {
         case ServiceCommand.Migrate(pg) =>
-          exec(Persistence.migrate(connect(pg).flatten))
+          exec(DBPersistence.migrate(connect(pg).flatten))
         case ServiceCommand.Start(rmq, pg, webPort, config) =>
-          val persist = connect(pg).map(Persistence(_))
+          val persist = connect(pg).map(DBPersistence(_))
           for {
             (db, con) <- resource(persist.parProduct(connect(rmq)))
             ws = webPort.fold(never[IO])(port =>

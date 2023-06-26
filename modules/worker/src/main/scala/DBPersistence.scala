@@ -7,12 +7,10 @@ import dev.hnaderi.ankabot.db.PersistenceLayer
 import dev.hnaderi.ankabot.worker.dal.tables.InsertionDAO
 import dev.hnaderi.ankabot.worker.dal.tables.InsertionDAO.*
 import dev.hnaderi.ankabot.worker.dal.tables.ResultId
-import fs2.Chunk
 import io.odin.Logger
 import skunk.Session
 
-type Persistence = Chunk[Worker.Result] => IO[Unit]
-object Persistence {
+object DBPersistence {
   def migrate(pool: Resource[IO, Session[IO]])(using Logger[IO]) = for {
     _ <- pool.use(PersistenceLayer.migrate(_, "db")("types", "tables"))
     tech <- Technology.load
