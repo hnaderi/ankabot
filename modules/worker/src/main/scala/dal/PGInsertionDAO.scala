@@ -72,13 +72,13 @@ object PGInsertionDAO {
     `enum`(_.toString, FetchResultType.mapping.get, Type("fetch_result"))
 
   private val fetchResult: Codec[FetchRes] =
-    (fetchResultType *: int4.opt).gimap
+    (fetchResultType *: int4.opt).to
 
   private val result: Codec[ResultInsert] =
-    (uri ~ duration ~ fetchResult ~ int4 ~ int4).gimap
+    (uri *: duration *: fetchResult *: int4 *: int4).to
 
   private val technology: Codec[TechnologyInsert] =
-    (varchar ~ varchar.opt ~ varchar.opt ~ bool.opt ~ bool.opt).gimap
+    (varchar *: varchar.opt *: varchar.opt *: bool.opt *: bool.opt).to
 
   private def insert(
       results: List[ResultInsert]
