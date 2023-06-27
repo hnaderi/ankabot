@@ -44,7 +44,7 @@ object S3Persistence {
     ObjectStorage.build(config.s3).evalMap(from(_, config))
 
   def from(s3: S3[IO], config: Config)(using Logger[IO]) = for {
-    storageText <- BatchStorage(config.workDir / "text", config.textBatchSize)
+    storageText <- BatchStorage(config.workDir / "text", config.textBatchSize.MB)
     obsText <- ObjectStorage(
       s3,
       storageText,
@@ -52,7 +52,7 @@ object S3Persistence {
       NS("texts/").append(config.objPrefix),
       config.multipartSize
     )
-    storageRaw <- BatchStorage(config.workDir / "raw", config.rawBatchSize)
+    storageRaw <- BatchStorage(config.workDir / "raw", config.rawBatchSize.MB)
     obsRaw <- ObjectStorage(
       s3,
       storageRaw,
