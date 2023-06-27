@@ -14,7 +14,13 @@ import pureconfig.error.UserValidationFailed
 import pureconfig.generic.derivation.default._
 
 import java.net.URI
+import dev.hnaderi.ankabot.storage.PartSize
+import dev.hnaderi.ankabot.storage.NS
 
+enum S3Config {
+  case Enabled(config: S3Persistence.Config)
+  case Disabled
+}
 object S3Config {
   private val cred = (
     opt[String](
@@ -66,8 +72,7 @@ object S3Config {
   private given Argument[PartSizeMB] = Argument.from("part size")(
     Argument[Int].read(_).andThen(PartSizeMB.from(_).toValidatedNel)
   )
-
-  def persistence = (
+  private def persistence = (
     s3,
     opt[Path](
       name = "s3-persistence-path",
@@ -77,17 +82,20 @@ object S3Config {
     opt[Int](
       name = "s3-persistence-raw-size",
       env = "S3_PERSISTENCE_RAW_SIZE",
-      help = "batch size for s3 raw data persistence"
+      help = "batch size for s3 raw data persistence",
+      default = 100
     ),
     opt[Int](
       name = "s3-persistence-text-size",
       env = "S3_PERSISTENCE_TEXT_SIZE",
-      help = "batch size for s3 text data persistence"
+      help = "batch size for s3 text data persistence",
+      default = 100
     ),
     opt[BucketName](
       name = "s3-persistence-bucket",
       env = "S3_PERSISTENCE_BUCKET",
-      help = "s3 persistence bucket name"
+      help = "s3 persistence bucket name",
+      default = BucketName(NS("ankabot"))
     ),
     opt[String](
       name = "s3-persistence-prefix",
@@ -97,7 +105,14 @@ object S3Config {
     opt[PartSizeMB](
       name = "s3-persistence-multipart-size",
       env = "S3_PERSISTENCE_MULTIPART_SIZE",
-      help = "s3 persistence multipart size"
+      help = "s3 persistence multipart size",
+      default = PartSize(5)
     ),
   ).mapN(S3Persistence.Config(_, _, _, _, _, _, _))
+
+  def opts = (Opts
+    .flag("s3-enabled", "Is s3 upload enabled?") *> persistence)
+    .map(S3Config.Enabled(_))
+    .withDefault(S3Config.Disabled)
+
 }

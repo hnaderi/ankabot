@@ -64,9 +64,9 @@ object Main extends CMDApp(CLICommand()) {
         case ServiceCommand.Migrate(pg) =>
           exec(DBPersistence.migrate(connect(pg).flatten))
         case ServiceCommand.Start(rmq, pg, webPort, config, s3) =>
-          val persist = connect(pg).flatMap(Persistence(_, s3))
           for {
-            (db, con) <- resource(persist.parProduct(connect(rmq)))
+            (persist, upload) <- Persistence(connect(pg), s3)
+            con <- resource(connect(rmq))
             ws = webPort.fold(never[IO])(port =>
               exec(
                 worker.JobRunner
@@ -76,7 +76,10 @@ object Main extends CMDApp(CLICommand()) {
               )
             )
             extractor <- eval(Extractor.build())
-            _ <- worker.Worker(con, db, config, extractor).concurrently(ws)
+            _ <- worker
+              .Worker(con, persist, config, extractor)
+              .concurrently(ws)
+              .concurrently(upload)
           } yield ()
         case ServiceCommand.Upload(address, file, batchSize) =>
           resource(EmberClientBuilder.default[IO].build).flatMap(cl =>

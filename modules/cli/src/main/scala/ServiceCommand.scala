@@ -7,7 +7,6 @@ import com.monovore.decline.Argument
 import com.monovore.decline.Command
 import com.monovore.decline.Opts
 import dev.hnaderi.ankabot.db.PgConfig
-import dev.hnaderi.ankabot.worker.S3Persistence
 import fs2.io.file.Path
 
 import java.net.URI
@@ -21,7 +20,7 @@ enum ServiceCommand {
       pg: PgConfig = PgConfig(),
       webPort: Option[Port] = None,
       config: Scraper.Config = Scraper.Config(),
-      s3: Option[S3Persistence.Config] = None
+      s3: S3Config = S3Config.Disabled
   )
   case Upload(
       url: URI,
@@ -51,7 +50,7 @@ object ServiceCommand {
             PgConfig.opts,
             Opts.option[Port]("port", "web service listen port", "l").orNone,
             CLICommand.scrapeConfig,
-            S3Config.persistence.orNone
+            S3Config.opts
           ).mapN(Start(_, _, _, _, _))
         },
         Command("upload", "upload to a submission request") {
