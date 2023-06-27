@@ -13,10 +13,19 @@ private def opt[T: Argument](
     env: String,
     help: String,
     default: T
-) = Opts
+): Opts[T] = opt(
+  name = name,
+  env = env,
+  help = help
+).withDefault(default)
+
+private def opt[T: Argument](
+    name: String,
+    env: String,
+    help: String
+): Opts[T] = Opts
   .option[T](name, help)
   .orElse(Opts.env(env, help))
-  .withDefault(default)
 
 private given Argument[Host] = Argument.from("hostname")(s =>
   Host.fromString(s).toValidNel(s"Invalid hostname $s")

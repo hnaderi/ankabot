@@ -40,6 +40,7 @@ lazy val common = module("common") {
           Dependencies.circe ++
           Dependencies.fs2CSV ++
           Dependencies.decline ++
+          Dependencies.pureconfig ++
           Dependencies.odin
     )
 }

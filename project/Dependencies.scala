@@ -13,6 +13,7 @@ object Dependencies {
   val fs2CSV = Seq("org.gnieh" %% "fs2-data-csv" % "1.7.1")
 
   val decline = Seq("com.monovore" %% "decline" % "2.4.1")
+  val pureconfig = Seq("com.github.pureconfig" %% "pureconfig-fs2" % "0.17.4")
   val odin = Seq("com.github.valskalla" %% "odin-slf4j" % "0.13.0")
 
   val s3 = Seq("io.laserdisc" %% "fs2-aws-s3" % "6.0.1")

@@ -15,12 +15,15 @@ final case class BatchFile(
 type PartFile = Path
 
 extension (u: UUID) {
-  def toNonEmptyString: NonEmptyString = NonEmptyString.unsafeFrom(u.toString)
+  inline def toNonEmptyString: NonEmptyString =
+    NonEmptyString.unsafeFrom(u.toString)
 }
 
 extension (ns: NonEmptyString) {
-  def append(s: String): NonEmptyString =
+  inline def append(s: String): NonEmptyString =
     NonEmptyString.unsafeFrom(ns.value.concat(s))
+  inline def append(s: Option[String]): NonEmptyString =
+    s.fold(ns)(ns.append(_))
 }
 
 import scala.quoted.*

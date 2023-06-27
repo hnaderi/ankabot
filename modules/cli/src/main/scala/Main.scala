@@ -6,6 +6,7 @@ import cats.syntax.all.*
 import dev.hnaderi.ankabot.Storage.stdinSources
 import dev.hnaderi.ankabot.db.PgConfig
 import dev.hnaderi.ankabot.worker.DBPersistence
+import dev.hnaderi.ankabot.worker.Persistence
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
@@ -42,14 +43,14 @@ object Main extends CMDApp(CLICommand()) {
         if inputs.isEmpty then Storage.stdinResults[WebsiteData]
         else emits(inputs).flatMap(Storage.load[WebsiteData])
 
-      Sampling.scraped(input).through(Storage.write(output))
+      Sampling.scraped(input).through(Storage.writeString(output))
 
     case CLICommand.Sample(inputs, InputType.Extracted, output) =>
       val input =
         if inputs.isEmpty then Storage.stdinResults[ExperimentData]
         else emits(inputs).flatMap(Storage.load[ExperimentData])
 
-      Sampling.extracted(input).through(Storage.write(output))
+      Sampling.extracted(input).through(Storage.writeString(output))
 
     case CLICommand.Inspect(inputs) =>
       val input =
@@ -62,8 +63,8 @@ object Main extends CMDApp(CLICommand()) {
       cmd match {
         case ServiceCommand.Migrate(pg) =>
           exec(DBPersistence.migrate(connect(pg).flatten))
-        case ServiceCommand.Start(rmq, pg, webPort, config) =>
-          val persist = connect(pg).map(DBPersistence(_))
+        case ServiceCommand.Start(rmq, pg, webPort, config, s3) =>
+          val persist = connect(pg).flatMap(Persistence(_, s3))
           for {
             (db, con) <- resource(persist.parProduct(connect(rmq)))
             ws = webPort.fold(never[IO])(port =>

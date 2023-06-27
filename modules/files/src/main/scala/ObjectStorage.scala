@@ -26,31 +26,42 @@ import java.net.URI
 import Stream.*
 
 object ObjectStorage {
-  def build(
-      endpoint: URI,
-      credentials: S3Credentials
-  ): Resource[IO, S3[IO]] = Interpreter[IO]
-    .S3AsyncClientOpResource(
-      S3AsyncClient
+  final case class Config(
+      address: URI,
+      credentials: S3Credentials,
+      pathStyle: Boolean = false,
+      region: Option[String] = None
+  )
+
+  def build(config: Config): Resource[IO, S3[IO]] = {
+    val builder = IO {
+      val b = S3AsyncClient
         .builder()
         .credentialsProvider(
           StaticCredentialsProvider.create(
             AwsBasicCredentials.create(
-              credentials.accessKey,
-              credentials.secretKey
+              config.credentials.accessKey,
+              config.credentials.secretKey
             )
           )
         )
-        .endpointOverride(endpoint)
-        .region(Region.US_EAST_1)
-        .forcePathStyle(true)
-    )
-    .map(S3.create)
+        .endpointOverride(config.address)
+        .region(config.region.fold(Region.US_EAST_1)(Region.of(_)))
+
+      if config.pathStyle
+      then b.forcePathStyle(true)
+      else b
+    }.toResource
+
+    builder
+      .flatMap(Interpreter[IO].S3AsyncClientOpResource)
+      .map(S3.create)
+  }
 
   def apply(
       s3: S3[IO],
       storage: BatchStorage,
-      bucketName: NonEmptyString,
+      bucket: BucketName,
       objPrefix: NonEmptyString,
       partSize: PartSizeMB
   )(using logger: Logger[IO]): IO[ObjectStorage] = for {
@@ -58,7 +69,6 @@ object ObjectStorage {
     toUpload <- Queue.unbounded[IO, Path]
   } yield new ObjectStorage {
 
-    private val bucket = BucketName(bucketName)
     private def toNS(str: String) =
       IO.fromEither(
         NonEmptyString

@@ -37,20 +37,27 @@ object Storage {
     stdin.through(Helpers.decodeSources)
 
   def persist[T: Encoder](path: Path): Pipe[IO, T, Nothing] =
-    _.map(_.asJson.noSpaces)
-      .intersperse("\n")
-      .through(write(path))
+    _.through(encodeJsonline).through(write(path))
 
   private def isGzip(path: Path) = path.extName.toLowerCase.endsWith(".gz")
 
-  def write(path: Path): Pipe[IO, String, Nothing] = in => {
-    val text = in.through(fs2.text.utf8.encode)
+  def encodeJsonline[F[_], T: Encoder]: Pipe[F, T, Byte] =
+    _.map(_.asJson.noSpaces).intersperse("\n").through(fs2.text.utf8.encode)
+
+  def decodeJsonline[T: Decoder]: Pipe[IO, Byte, T] =
+    _.through(fs2.text.utf8.decode).through(decodeResult[T])
+
+  def writeString(path: Path): Pipe[IO, String, Nothing] =
+    _.through(fs2.text.utf8.encode).through(write(path))
+
+  def write(path: Path): Pipe[IO, Byte, Nothing] = in => {
     val out =
       if isGzip(path)
-      then text.through(fs2.compression.Compression[IO].gzip())
-      else text
+      then in.through(fs2.compression.Compression[IO].gzip())
+      else in
     out.through(Files[IO].writeAll(path))
   }
+
   def read(path: Path): Stream[IO, String] = {
     val in = Files[IO].readAll(path)
     val text =
