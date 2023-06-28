@@ -133,7 +133,10 @@ object BatchStorage {
 
     override def write: Pipe[IO, Byte, Nothing] = writeReliable(parts)(_)
       .foreach(f => counter.use(addPart(_, f)))
-      .onFinalize(IO.realTime.map(Some(_)).flatMap(lastWrite.set))
+      .onFinalize(updateLastWrite)
+
+    private val updateLastWrite =
+      IO.realTime.map(Some(_)).flatMap(lastWrite.set)
 
     private def addPart(fc: FileCounter, file: Path) =
       fc
@@ -147,14 +150,13 @@ object BatchStorage {
         )
 
     private def trigger(fc: FileCounter) =
-      fc.get.flatMap(save).flatMap(wipQ.offer)
+      fc.get.flatMap(save).flatMap(wipQ.offer) *> updateLastWrite
 
     override def flush: IO[Unit] = counter.use(counter =>
       counter.size.flatMap(size =>
         if size > 0 then
-          logger.info(s"Forcing batch creation, [$size/$threshold]") *> trigger(
-            counter
-          )
+          logger.info(s"Forcing batch creation, [$size/$threshold]") *>
+            trigger(counter)
         else IO.unit
       )
     )
