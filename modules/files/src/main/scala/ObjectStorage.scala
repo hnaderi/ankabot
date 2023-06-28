@@ -95,7 +95,7 @@ object ObjectStorage {
             .through(
               s3.uploadFileMultipart(
                 bucket,
-                FileKey(objPrefix.append(name)),
+                FileKey(objPrefix.append(name).append(".jsonl.gz")),
                 partSize
               )
             )
