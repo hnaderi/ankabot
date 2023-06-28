@@ -1,6 +1,7 @@
 package dev.hnaderi.ankabot.storage
 
 import cats.effect.IO
+import cats.effect.kernel.Ref
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Resource.ExitCase.Succeeded
 import cats.effect.std.Mutex
@@ -12,6 +13,8 @@ import fs2.Stream
 import fs2.io.file.Files
 import fs2.io.file.Path
 import io.odin.Logger
+
+import scala.concurrent.duration.*
 
 import Stream.*
 
@@ -25,7 +28,11 @@ trait BatchStorage {
 object BatchStorage {
   private val files = Files[IO]
 
-  def apply(base: Path, threshold: Long)(using Logger[IO]): IO[BatchStorage] =
+  def apply(
+      base: Path,
+      threshold: Long,
+      maxToleratedWriteLag: FiniteDuration = 5.minutes
+  )(using Logger[IO]): IO[BatchStorage] =
     for {
       counter <- FileCounter()
       parts = base / "parts"
@@ -33,13 +40,16 @@ object BatchStorage {
       _ <- files.createDirectories(parts)
       _ <- files.createDirectories(batches)
       wipQ <- Queue.unbounded[IO, BatchFile]
+      lastWrite <- IO.ref(Option.empty[FiniteDuration])
 
       storage = BatchStorageImpl(
         threshold,
         counter,
         parts = parts,
         batches = batches,
-        wipQ
+        wipQ,
+        lastWrite,
+        maxToleratedWriteLag
       )
       _ <- storage.init
 
@@ -50,7 +60,9 @@ object BatchStorage {
       counter: Resource[IO, FileCounter],
       parts: Path,
       batches: Path,
-      wipQ: Queue[IO, BatchFile]
+      wipQ: Queue[IO, BatchFile],
+      lastWrite: Ref[IO, Option[FiniteDuration]],
+      maxToleratedWrite: FiniteDuration
   )(using logger: Logger[IO])
       extends BatchStorage {
 
@@ -121,6 +133,7 @@ object BatchStorage {
 
     override def write: Pipe[IO, Byte, Nothing] = writeReliable(parts)(_)
       .foreach(f => counter.use(addPart(_, f)))
+      .onFinalize(IO.realTime.map(Some(_)).flatMap(lastWrite.set))
 
     private def addPart(fc: FileCounter, file: Path) =
       fc
@@ -146,7 +159,25 @@ object BatchStorage {
       )
     )
 
-    override def wips: Stream[IO, BatchFile] = fromQueueUnterminated(wipQ)
+    override def wips: Stream[IO, BatchFile] =
+      fromQueueUnterminated(wipQ).concurrently(
+        awakeEvery[IO](30.second).foreach { _ =>
+          IO.realTime.flatMap(now =>
+            lastWrite
+              .modify {
+                case Some(value) if now - value > maxToleratedWrite =>
+                  (None, true)
+                case other => (other, false)
+              }
+              .ifM(
+                logger
+                  .info("Last written part is to old! triggering a flush...") *>
+                  flush,
+                IO.unit
+              )
+          )
+        }
+      )
 
     private def newFile(base: Path, ext: String = ""): IO[Path] =
       UUIDGen[IO].randomUUID
