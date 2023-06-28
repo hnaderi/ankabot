@@ -44,12 +44,15 @@ object S3Persistence {
     ObjectStorage.build(config.s3).evalMap(from(_, config))
 
   def from(s3: S3[IO], config: Config)(using Logger[IO]) = for {
-    storageText <- BatchStorage(config.workDir / "text", config.textBatchSize.MB)
+    storageText <- BatchStorage(
+      config.workDir / "text",
+      config.textBatchSize.MB
+    )
     obsText <- ObjectStorage(
       s3,
       storageText,
       config.bucketName,
-      NS("texts/").append(config.objPrefix),
+      NS("text/").prepend(config.objPrefix),
       config.multipartSize
     )
     storageRaw <- BatchStorage(config.workDir / "raw", config.rawBatchSize.MB)
@@ -57,7 +60,7 @@ object S3Persistence {
       s3,
       storageRaw,
       config.bucketName,
-      NS("raw/").append(config.objPrefix),
+      NS("raw/").prepend(config.objPrefix),
       config.multipartSize
     )
 
@@ -99,7 +102,9 @@ object S3Persistence {
 
   private def getTexts(res: Worker.Result) = TextData(
     domain = res.domain,
-    texts = res.raw.flatMap(_.page.texts)
+    texts = res.raw.flatMap(
+      _.page.texts.filterNot(s => s.isEmpty || s.isBlank).map(_.strip)
+    )
   )
 
   private def getRawData(res: Worker.Result) = RawData(

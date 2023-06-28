@@ -24,6 +24,11 @@ extension (ns: NonEmptyString) {
     NonEmptyString.unsafeFrom(ns.value.concat(s))
   inline def append(s: Option[String]): NonEmptyString =
     s.fold(ns)(ns.append(_))
+
+  inline def prepend(s: String): NonEmptyString =
+    NonEmptyString.unsafeFrom(s.concat(ns.value))
+  inline def prepend(s: Option[String]): NonEmptyString =
+    s.fold(ns)(ns.prepend(_))
 }
 
 import scala.quoted.*
