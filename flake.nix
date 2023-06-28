@@ -18,7 +18,7 @@
           imports = [ typelevel-nix.typelevelShell ];
           name = "ankabot-shell";
           typelevelShell = { jdk.package = pkgs.jdk17; };
-          packages = [ pkgs.visualvm ];
+          packages = [ pkgs.visualvm pkgs.s3cmd ];
         };
       });
 }
