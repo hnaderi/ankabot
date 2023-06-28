@@ -11,6 +11,7 @@ inThisBuild(
       RefPredicate.Equals(Ref.Branch("main")),
       RefPredicate.StartsWith(Ref.Tag("v"))
     ),
+    githubWorkflowTargetTags := Seq("v*"),
     githubWorkflowPublishPreamble += WorkflowStep.Use(
       UseRef.Public("docker", "login-action", "v2"),
       params = Map(
