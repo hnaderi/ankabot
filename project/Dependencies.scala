@@ -16,7 +16,7 @@ object Dependencies {
   val pureconfig = Seq("com.github.pureconfig" %% "pureconfig-fs2" % "0.17.4")
   val odin = Seq("com.github.valskalla" %% "odin-slf4j" % "0.13.0")
 
-  val s3 = Seq("io.laserdisc" %% "fs2-aws-s3" % "6.0.1")
+  val s3 = Seq("io.laserdisc" %% "fs2-aws-s3" % "6.0.2")
 
   val jsoup = Seq("org.jsoup" % "jsoup" % "1.15.4")
 
