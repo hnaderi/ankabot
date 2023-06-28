@@ -31,7 +31,7 @@ object BatchStorage {
   def apply(
       base: Path,
       threshold: Long,
-      maxToleratedWriteLag: FiniteDuration = 5.minutes
+      maxToleratedWriteLag: FiniteDuration = 10.minutes
   )(using Logger[IO]): IO[BatchStorage] =
     for {
       counter <- FileCounter()
@@ -161,7 +161,7 @@ object BatchStorage {
 
     override def wips: Stream[IO, BatchFile] =
       fromQueueUnterminated(wipQ).concurrently(
-        awakeEvery[IO](30.second).foreach { _ =>
+        awakeEvery[IO](5.second).foreach { _ =>
           IO.realTime.flatMap(now =>
             lastWrite
               .modify {
@@ -171,7 +171,9 @@ object BatchStorage {
               }
               .ifM(
                 logger
-                  .info("Last written part is to old! triggering a flush...") *>
+                  .info(
+                    "Last written part is too old! triggering a flush..."
+                  ) *>
                   flush,
                 IO.unit
               )

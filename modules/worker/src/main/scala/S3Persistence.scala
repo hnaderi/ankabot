@@ -19,6 +19,7 @@ import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
+import scala.concurrent.duration.*
 
 import java.net.URI
 
@@ -35,6 +36,7 @@ object S3Persistence {
       workDir: Path,
       rawBatchSize: Int = 1000,
       textBatchSize: Int = 100,
+      maxWriteLag: FiniteDuration = 10.minutes,
       bucketName: BucketName = BucketName(NS("ankabot")),
       objPrefix: Option[String] = None,
       multipartSize: PartSizeMB = PartSize(5)
@@ -46,7 +48,8 @@ object S3Persistence {
   def from(s3: S3[IO], config: Config)(using Logger[IO]) = for {
     storageText <- BatchStorage(
       config.workDir / "text",
-      config.textBatchSize.MB
+      config.textBatchSize.MB,
+      config.maxWriteLag
     )
     obsText <- ObjectStorage(
       s3,
@@ -55,7 +58,11 @@ object S3Persistence {
       NS("text/").prepend(config.objPrefix),
       config.multipartSize
     )
-    storageRaw <- BatchStorage(config.workDir / "raw", config.rawBatchSize.MB)
+    storageRaw <- BatchStorage(
+      config.workDir / "raw",
+      config.rawBatchSize.MB,
+      config.maxWriteLag
+    )
     obsRaw <- ObjectStorage(
       s3,
       storageRaw,

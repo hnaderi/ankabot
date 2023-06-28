@@ -3,7 +3,9 @@ package dev.hnaderi.ankabot
 import cats.syntax.all.*
 import com.monovore.decline.Argument
 import com.monovore.decline.Opts
+import dev.hnaderi.ankabot.storage.NS
 import dev.hnaderi.ankabot.storage.ObjectStorage
+import dev.hnaderi.ankabot.storage.PartSize
 import dev.hnaderi.ankabot.worker.S3Persistence
 import eu.timepit.refined.types.string.NonEmptyString
 import fs2.aws.s3.models.Models.BucketName
@@ -14,8 +16,7 @@ import pureconfig.error.UserValidationFailed
 import pureconfig.generic.derivation.default._
 
 import java.net.URI
-import dev.hnaderi.ankabot.storage.PartSize
-import dev.hnaderi.ankabot.storage.NS
+import scala.concurrent.duration.*
 
 enum S3Config {
   case Enabled(config: S3Persistence.Config)
@@ -91,6 +92,12 @@ object S3Config {
       help = "batch size for s3 text data persistence",
       default = 100
     ),
+    opt[FiniteDuration](
+      name = "s3-persistence-max-write-lag",
+      env = "S3_PERSISTENCE_MAX_WRITE_LAG",
+      help = "Maximum time to wait before triggering a force flush",
+      default = 10.minutes
+    ),
     opt[BucketName](
       name = "s3-persistence-bucket",
       env = "S3_PERSISTENCE_BUCKET",
@@ -108,7 +115,7 @@ object S3Config {
       help = "s3 persistence multipart size",
       default = PartSize(5)
     ),
-  ).mapN(S3Persistence.Config(_, _, _, _, _, _, _))
+  ).mapN(S3Persistence.Config(_, _, _, _, _, _, _, _))
 
   def opts = (Opts
     .flag("s3-enabled", "Is s3 upload enabled?") *> persistence)
