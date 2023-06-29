@@ -20,10 +20,10 @@ object Dependencies {
 
   val jsoup = Seq("org.jsoup" % "jsoup" % "1.15.4")
 
-  val emberClient = Seq("org.http4s" %% "http4s-ember-client" % "0.23.21")
+  val emberClient = Seq("org.http4s" %% "http4s-ember-client" % "0.23.22")
   val emberServer = Seq(
-    "org.http4s" %% "http4s-dsl" % "0.23.21",
-    "org.http4s" %% "http4s-ember-server" % "0.23.21"
+    "org.http4s" %% "http4s-dsl" % "0.23.22",
+    "org.http4s" %% "http4s-ember-server" % "0.23.22"
   )
   val jdkClient = Seq(
     "org.http4s" %% "http4s-jdk-http-client" % "0.9.1-5-999d1cd-SNAPSHOT"
