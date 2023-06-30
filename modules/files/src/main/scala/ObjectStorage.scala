@@ -6,12 +6,14 @@ import cats.effect.kernel.Resource
 import cats.effect.std.Queue
 import cats.syntax.all.*
 import eu.timepit.refined.types.string.NonEmptyString
+import fs2.Chunk
 import fs2.Pipe
 import fs2.Stream
 import fs2.aws.s3.S3
 import fs2.aws.s3.models.Models.BucketName
 import fs2.aws.s3.models.Models.FileKey
 import fs2.aws.s3.models.Models.PartSizeMB
+import fs2.compression.Compression
 import fs2.io.file.Files
 import fs2.io.file.Path
 import io.laserdisc.pure.s3.tagless.Interpreter
@@ -67,6 +69,12 @@ object ObjectStorage {
   )(using logger: Logger[IO]): IO[ObjectStorage] = for {
 
     toUpload <- Queue.unbounded[IO, Path]
+
+    newline <- emit("\n")
+      .through(fs2.text.utf8.encode)
+      .through(Compression[IO].gzip())
+      .compile
+      .to(Chunk)
   } yield new ObjectStorage {
 
     private def toNS(str: String) =
@@ -86,7 +94,10 @@ object ObjectStorage {
     override def upload: Stream[IO, Nothing] = {
 
       def readConcat(batch: BatchFile): Stream[IO, Byte] =
-        emits(batch.content).flatMap(Files[IO].readAll)
+        emits(batch.content)
+          .map(Files[IO].readAll)
+          .intersperse(chunk(newline))
+          .flatten
 
       def upload(batch: BatchFile): Stream[IO, Nothing] =
         val name = batch.content.mkString.md5Hash
