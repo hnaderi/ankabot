@@ -10,6 +10,7 @@ import dev.hnaderi.ankabot.worker.Persistence
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
+import lepus.client.Connection.Status
 import lepus.client.LepusClient
 import natchez.Trace.Implicits.noop
 import org.http4s.ember.client.EmberClientBuilder
@@ -80,6 +81,10 @@ object Main extends CMDApp(CLICommand()) {
               .Worker(con, persist, config, extractor)
               .concurrently(ws)
               .concurrently(upload)
+              .concurrently(
+                con.status.discrete.foreach(s => logger.debug(s"RMQ: $s"))
+              )
+              .interruptWhen(con.status.map(_ == Status.Closed))
           } yield ()
         case ServiceCommand.Upload(address, file, batchSize) =>
           resource(EmberClientBuilder.default[IO].build).flatMap(cl =>
