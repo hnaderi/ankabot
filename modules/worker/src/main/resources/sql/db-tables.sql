@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS socials (
   value varchar NOT NULL,
   CONSTRAINT socials_fk FOREIGN KEY (result_id) REFERENCES results(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
+CREATE INDEX IF NOT EXISTS socials_type_idx ON socials ("type");
 
 CREATE TABLE IF NOT EXISTS phones (
   result_id int8 NOT NULL,
