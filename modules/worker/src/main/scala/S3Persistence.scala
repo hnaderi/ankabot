@@ -1,13 +1,10 @@
-package dev.hnaderi.ankabot.worker
+package dev.hnaderi.ankabot
+package worker
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import dev.hnaderi.ankabot.FetchedData
-import dev.hnaderi.ankabot.Storage
 import dev.hnaderi.ankabot.storage.BatchStorage
 import dev.hnaderi.ankabot.storage.*
-import dev.hnaderi.ankabot.worker.S3Persistence.RawData
-import dev.hnaderi.ankabot.worker.S3Persistence.TextData
 import dev.hnaderi.ankabot.worker.Worker.Result
 import fs2.Chunk
 import fs2.Stream
@@ -15,12 +12,10 @@ import fs2.aws.s3.S3
 import fs2.aws.s3.models.Models.BucketName
 import fs2.aws.s3.models.Models.PartSizeMB
 import fs2.io.file.Path
-import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 
-import java.net.URI
 import scala.concurrent.duration.*
 
 trait S3Persistence {
@@ -118,15 +113,5 @@ object S3Persistence {
     domain = res.domain,
     pages = res.raw.map(_.data)
   )
-
-  final case class TextData(
-      domain: URI,
-      texts: Seq[String]
-  ) derives Codec.AsObject
-
-  final case class RawData(
-      domain: URI,
-      pages: List[FetchedData]
-  ) derives Codec.AsObject
 
 }

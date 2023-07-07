@@ -78,3 +78,13 @@ final case class WebsiteData(
     home: FetchResult,
     children: List[FetchResult] = Nil
 ) derives Codec.AsObject
+
+final case class TextData(
+    domain: URI,
+    texts: Seq[String]
+) derives Codec.AsObject
+
+final case class RawData(
+    domain: URI,
+    pages: List[FetchedData]
+) derives Codec.AsObject
