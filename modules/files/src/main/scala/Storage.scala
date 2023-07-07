@@ -19,7 +19,7 @@ object Storage {
   def load[T: Decoder](path: Path): Stream[IO, T] =
     read(path).through(decodeResult)
 
-  private val stdin = fs2.io.stdin[IO](4096)
+  val stdin: Stream[IO, Byte] = fs2.io.stdin[IO](4096)
 
   def stdinResults[T: Decoder]: Stream[IO, T] = stdin.through(decodeResult)
 

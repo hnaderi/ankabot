@@ -12,7 +12,6 @@ import fs2.aws.s3.S3
 import fs2.aws.s3.models.Models.BucketName
 import fs2.aws.s3.models.Models.PartSizeMB
 import fs2.io.file.Path
-import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 
@@ -20,14 +19,12 @@ import scala.concurrent.duration.*
 
 trait S3Persistence {
   def write(results: Chunk[Worker.Result]): Stream[IO, Nothing]
-  def readText(name: String): Stream[IO, TextData]
-  def readRaw(name: String): Stream[IO, RawData]
   def upload: Stream[IO, Nothing]
 }
 
 object S3Persistence {
   final case class Config(
-      s3: ObjectStorage.Config,
+      s3: ObjectStorageWriter.Config,
       workDir: Path,
       rawBatchSize: Int = 1000,
       textBatchSize: Int = 100,
@@ -38,7 +35,7 @@ object S3Persistence {
   )
 
   def apply(config: Config)(using Logger[IO]): Resource[IO, S3Persistence] =
-    ObjectStorage.build(config.s3).evalMap(from(_, config))
+    ObjectStorageWriter.build(config.s3).evalMap(from(_, config))
 
   def from(s3: S3[IO], config: Config)(using Logger[IO]) = for {
     storageText <- BatchStorage(
@@ -46,7 +43,7 @@ object S3Persistence {
       config.textBatchSize.MB,
       config.maxWriteLag
     )
-    obsText <- ObjectStorage(
+    obsText <- ObjectStorageWriter(
       s3,
       storageText,
       config.bucketName,
@@ -58,7 +55,7 @@ object S3Persistence {
       config.rawBatchSize.MB,
       config.maxWriteLag
     )
-    obsRaw <- ObjectStorage(
+    obsRaw <- ObjectStorageWriter(
       s3,
       storageRaw,
       config.bucketName,
@@ -71,7 +68,7 @@ object S3Persistence {
 
     private def ww[T: Encoder](
         data: Chunk[T],
-        obs: ObjectStorage
+        obs: ObjectStorageWriter
     ): Stream[IO, Nothing] =
       Stream
         .chunk(data)
@@ -79,23 +76,12 @@ object S3Persistence {
         .through(compression.gzip())
         .through(obs.write)
 
-    private def rr[T: Decoder](obs: ObjectStorage, name: String) = obs
-      .read(name)
-      .through(compression.gunzip())
-      .flatMap(_.content)
-      .through(Storage.decodeJsonline)
-
     override def write(results: Chunk[Worker.Result]): Stream[IO, Nothing] = {
       val texts = ww(results.map(getTexts), obsText)
       val raw = ww(results.map(getRawData), obsRaw)
 
       texts.merge(raw)
     }
-
-    override def readText(name: String): Stream[IO, TextData] =
-      rr(obsText, name)
-
-    override def readRaw(name: String): Stream[IO, RawData] = rr(obsRaw, name)
 
     override def upload: Stream[IO, Nothing] =
       obsRaw.upload.merge(obsText.upload)

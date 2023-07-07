@@ -22,9 +22,7 @@ object Main extends CMDApp(CLICommand()) {
 
   override def app(cmd: CLICommand): Stream[IO, Unit] = cmd match {
     case CLICommand.Extract(output, inputs, children) =>
-      val input =
-        if inputs.isEmpty then Storage.stdinResults[WebsiteData]
-        else emits(inputs).flatMap(Storage.load[WebsiteData])
+      val input = inputs.read.through(Storage.decodeJsonline[WebsiteData])
 
       Extractor(
         input = input,
@@ -35,23 +33,9 @@ object Main extends CMDApp(CLICommand()) {
     case cmd: CLICommand.Scrape =>
       import cmd.*
       val input =
-        if inputs.isEmpty then Storage.stdinSources
-        else emits(inputs).flatMap(Storage.sources)
+        inputs.read.through(fs2.text.utf8.decode).through(Helpers.decodeSources)
 
       Scraper(input, cmd.config).through(Storage.persist(output))
-    case CLICommand.Sample(inputs, InputType.Scraped, output) =>
-      val input =
-        if inputs.isEmpty then Storage.stdinResults[WebsiteData]
-        else emits(inputs).flatMap(Storage.load[WebsiteData])
-
-      Sampling.scraped(input).through(Storage.writeString(output))
-
-    case CLICommand.Sample(inputs, InputType.Extracted, output) =>
-      val input =
-        if inputs.isEmpty then Storage.stdinResults[ExperimentData]
-        else emits(inputs).flatMap(Storage.load[ExperimentData])
-
-      Sampling.extracted(input).through(Storage.writeString(output))
 
     case CLICommand.Inspect(inputs) =>
       val input =

@@ -17,6 +17,7 @@ import fs2.compression.Compression
 import fs2.io.file.Files
 import fs2.io.file.Path
 import io.laserdisc.pure.s3.tagless.Interpreter
+import io.laserdisc.pure.s3.tagless.S3AsyncClientOp
 import io.odin.Logger
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
@@ -27,7 +28,7 @@ import java.net.URI
 
 import Stream.*
 
-object ObjectStorage {
+object ObjectStorageWriter {
   final case class Config(
       address: URI,
       credentials: S3Credentials,
@@ -35,7 +36,7 @@ object ObjectStorage {
       region: Option[String] = None
   )
 
-  def build(config: Config): Resource[IO, S3[IO]] = {
+  def buildLowLevel(config: Config): Resource[IO, S3AsyncClientOp[IO]] = {
     val builder = IO {
       val b = S3AsyncClient
         .builder()
@@ -57,8 +58,10 @@ object ObjectStorage {
 
     builder
       .flatMap(Interpreter[IO].S3AsyncClientOpResource)
-      .map(S3.create)
   }
+
+  def build(config: Config): Resource[IO, S3[IO]] =
+    buildLowLevel(config).map(S3.create)
 
   def apply(
       s3: S3[IO],
@@ -66,7 +69,7 @@ object ObjectStorage {
       bucket: BucketName,
       objPrefix: NonEmptyString,
       partSize: PartSizeMB
-  )(using logger: Logger[IO]): IO[ObjectStorage] = for {
+  )(using logger: Logger[IO]): IO[ObjectStorageWriter] = for {
 
     toUpload <- Queue.unbounded[IO, Path]
 
@@ -75,21 +78,9 @@ object ObjectStorage {
       .through(Compression[IO].gzip())
       .compile
       .to(Chunk)
-  } yield new ObjectStorage {
-
-    private def toNS(str: String) =
-      IO.fromEither(
-        NonEmptyString
-          .from(str)
-          .leftMap(IllegalArgumentException(_))
-      )
+  } yield new ObjectStorageWriter {
 
     override def write: Pipe[IO, Byte, Nothing] = storage.write
-
-    override def read(name: String): Stream[IO, Byte] =
-      eval(toNS(name))
-        .map(FileKey(_))
-        .flatMap(s3.readFile(bucket, _))
 
     override def upload: Stream[IO, Nothing] = {
 
@@ -122,8 +113,7 @@ object ObjectStorage {
   )
 }
 
-trait ObjectStorage {
+trait ObjectStorageWriter {
   def write: Pipe[IO, Byte, Nothing]
-  def read(name: String): Stream[IO, Byte]
   def upload: Stream[IO, Nothing]
 }

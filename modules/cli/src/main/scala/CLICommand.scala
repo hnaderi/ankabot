@@ -12,34 +12,18 @@ import scala.concurrent.duration.*
 enum CLICommand {
   case Extract(
       output: Path,
-      inputs: List[Path] = Nil,
+      inputs: InputPath = InputPath.StdIn,
       children: Boolean = true
   )
   case Scrape(
       output: Path,
-      inputs: List[Path] = Nil,
+      inputs: InputPath = InputPath.StdIn,
       config: Scraper.Config
-  )
-  case Sample(
-      inputs: List[Path] = Nil,
-      inputType: InputType = InputType.Scraped,
-      output: Path
   )
   case Inspect(
       inputs: List[Path] = Nil
   )
   case Service(cmd: ServiceCommand)
-}
-
-enum InputType {
-  case Scraped, Extracted
-}
-
-object InputType {
-  given Argument[InputType] = Argument.fromMap(
-    "file type",
-    InputType.values.map(b => b.toString.toLowerCase -> b).toMap
-  )
 }
 
 object CLICommand {
@@ -79,25 +63,16 @@ object CLICommand {
       Command("extract", "Extract data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.arguments[Path]("input").orEmpty,
+          InputPath.opts,
           Opts.flag("no-children", "Don't extract children").orTrue
         ).mapN(Extract(_, _, _))
       },
       Command("scrape", "Scrape sources") {
         (
           Opts.option[Path]("output", "Output file", "o"),
-          Opts.arguments[Path]("input").orEmpty,
+          InputPath.opts,
           scrapeConfig
         ).mapN(Scrape(_, _, _))
-      },
-      Command("sample", "Sample scraped data failures") {
-        (
-          Opts.arguments[Path]("input").orEmpty,
-          Opts
-            .option[InputType]("type", "File type")
-            .withDefault(InputType.Scraped),
-          Opts.option[Path]("output", "Output file", "o"),
-        ).mapN(Sample(_, _, _))
       },
       Command("inspect", "Inspect data") {
         Opts.arguments[Path]("input").orEmpty.map(Inspect(_))

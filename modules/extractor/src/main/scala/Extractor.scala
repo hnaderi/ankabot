@@ -19,7 +19,7 @@ object Extractor {
       extractChild: Boolean = true
   )(using
       logger: Logger[IO]
-  ): Stream[IO, ExperimentData] = (for {
+  ): Stream[IO, WebsiteExtractedData] = (for {
     extractor <- eval(build())
     metrics <- ExtractionMetricsCollector.printer()
     reporter <- StatusReporter[URI]()
@@ -37,23 +37,12 @@ object Extractor {
           (allTime, allX) <- eval(children.traverse(extractor).timed).map(
             (t, ch) => (t + homeTime, ch.combineAll.combine(homeX))
           )
-          _ <- eval(
-            metrics
-              .add(
-                contactsHome = homeX.contacts,
-                contactsAll = allX.contacts,
-                technologiesHome = homeX.technologies,
-                technologiesAll = allX.technologies,
-                timeHome = homeTime,
-                timeAll = allTime
-              )
-          )
+          _ <- eval(metrics.add(allX, allTime))
 
-        } yield ExperimentData(
-          source = fetched.home.source,
-          contacts = allX.contacts,
-          technologies = allX.technologies,
-          children = home.page.childPages
+        } yield WebsiteExtractedData(
+          domain = fetched.home.source,
+          extracted = allX,
+          pages = home.page.childPages
         )
       }
   } yield jobs)

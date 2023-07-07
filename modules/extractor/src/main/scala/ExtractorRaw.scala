@@ -6,63 +6,49 @@ import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
 
-import java.net.URI
+import scala.concurrent.duration.Duration
 
 object ExtractorRaw {
   def build(patterns: IO[TechnologyMap] = Technology.load): IO[Extractor] =
     patterns.map(extractors.All(_).io)
 
   def apply(
-      input: Stream[IO, WebsiteData],
-      maxParallel: Int,
-      extractChild: Boolean = true
+      input: Stream[IO, RawData],
+      maxParallel: Int
   )(using
       logger: Logger[IO]
-  ): Stream[IO, ExperimentData] = (for {
-    extractor <- eval(build())
-    metrics <- ExtractionMetricsCollector.printer()
-    reporter <- StatusReporter[URI]()
-    jobs <- input
-      .map { fetched =>
-        for {
-          _ <- resource(reporter.report(fetched.home.source))
-          home <- evals(getPage(fetched.home))
-          children <- eval(
-            (if extractChild then fetched.children else Nil)
-              .traverse(getPage)
-              .map(_.flatten)
+  ): Stream[IO, WebsiteExtractedData] = {
+    def getPage(data: FetchedData) =
+      IO.interruptibleMany(JsoupWebPage(data))
+        .map(_.toOption.map(ToExtract(_, data)))
+    val emptyData = IO(ExtractedData())
+
+    for {
+      extractor <- eval(build())
+      metrics <- ExtractionMetricsCollector.printer()
+      jobs <- input.parEvalMap(maxParallel) { fetched =>
+        fetched.pages
+          .traverse(currentPage =>
+            getPage(currentPage).flatMap {
+              case Some(page) => extractor(page)
+              case None       => emptyData
+            }.timed
           )
-          (homeTime, homeX) <- eval(extractor(home).timed)
-          (allTime, allX) <- eval(children.traverse(extractor).timed).map(
-            (t, ch) => (t + homeTime, ch.combineAll.combine(homeX))
-          )
-          _ <- eval(
+          .flatMap { x =>
+            val data = x.foldMap(_._2)
+            val spent = x.foldLeft(Duration.Zero)(_ + _._1)
+
             metrics
-              .add(
-                contactsHome = homeX.contacts,
-                contactsAll = allX.contacts,
-                technologiesHome = homeX.technologies,
-                technologiesAll = allX.technologies,
-                timeHome = homeTime,
-                timeAll = allTime
+              .add(data, spent)
+              .as(
+                WebsiteExtractedData(
+                  fetched.domain,
+                  data,
+                  fetched.pages.map(_.url).toSet
+                )
               )
-          )
-
-        } yield ExperimentData(
-          source = fetched.home.source,
-          contacts = allX.contacts,
-          technologies = allX.technologies,
-          children = home.page.childPages
-        )
+          }
       }
-  } yield jobs)
-    .parJoin(maxParallel)
-
-  def getPage(fetch: FetchResult): IO[Option[ToExtract]] =
-    fetch.result match {
-      case Left(_) => IO(None)
-      case Right(result) =>
-        IO.interruptibleMany(JsoupWebPage(result))
-          .map(_.toOption.map(ToExtract(_, result)))
-    }
+    } yield jobs
+  }
 }

@@ -4,7 +4,7 @@ import cats.syntax.all.*
 import com.monovore.decline.Argument
 import com.monovore.decline.Opts
 import dev.hnaderi.ankabot.storage.NS
-import dev.hnaderi.ankabot.storage.ObjectStorage
+import dev.hnaderi.ankabot.storage.ObjectStorageWriter
 import dev.hnaderi.ankabot.storage.PartSize
 import dev.hnaderi.ankabot.worker.S3Persistence
 import eu.timepit.refined.types.string.NonEmptyString
@@ -34,7 +34,7 @@ object S3Config {
       env = "S3_SECRET_KEY",
       help = "S3 secret key"
     )
-  ).mapN(ObjectStorage.S3Credentials(_, _))
+  ).mapN(ObjectStorageWriter.S3Credentials(_, _))
 
   def s3 = (
     opt[URI](
@@ -50,7 +50,7 @@ object S3Config {
       env = "S3_REGION",
       help = "S3 region"
     ).orNone
-  ).mapN(ObjectStorage.Config(_, _, _, _))
+  ).mapN(ObjectStorageWriter.Config(_, _, _, _))
 
   private given ConfigReader[PartSizeMB] = ConfigReader.intConfigReader.emap(
     PartSizeMB.from(_).leftMap(UserValidationFailed(_))
@@ -61,12 +61,12 @@ object S3Config {
   private given ConfigReader[Path] =
     ConfigReader.pathConfigReader.map(Path.fromNioPath(_))
 
-  given ConfigReader[ObjectStorage.S3Credentials] = ConfigReader.derived
-  given obsConfigReader: ConfigReader[ObjectStorage.Config] =
+  given ConfigReader[ObjectStorageWriter.S3Credentials] = ConfigReader.derived
+  given obsConfigReader: ConfigReader[ObjectStorageWriter.Config] =
     ConfigReader.derived
   given ConfigReader[S3Persistence.Config] = ConfigReader.derived
 
-  private given Argument[BucketName] =
+  given Argument[BucketName] =
     Argument
       .from("bucket name")(NonEmptyString.from(_).toValidatedNel)
       .map(BucketName(_))
