@@ -1,7 +1,6 @@
 package dev.hnaderi.ankabot
 
 import cats.effect.IO
-import cats.syntax.all.*
 import fs2.Pipe
 import fs2.Stream
 import fs2.io.file.Files
@@ -20,21 +19,19 @@ object Storage {
   def load[T: Decoder](path: Path): Stream[IO, T] =
     read(path).through(decodeResult)
 
-  private val stdin = fs2.io.stdin[IO](4096).through(fs2.text.utf8.decode)
+  private val stdin = fs2.io.stdin[IO](4096)
 
   def stdinResults[T: Decoder]: Stream[IO, T] = stdin.through(decodeResult)
 
-  private def decodeResult[T: Decoder]: Pipe[IO, String, T] =
-    _.through(fs2.text.lines)
-      .filterNot(_.isBlank())
-      .map(io.circe.parser.decode[T](_))
-      .flatMap(fromEither(_))
+  private def decodeResult[T: Decoder]: Pipe[IO, Byte, T] =
+    _.through(io.circe.fs2.byteStreamParser)
+      .flatMap(j => fromEither(j.as[T]))
 
   def sources(path: Path)(using Logger[IO]): Stream[IO, URI] =
-    read(path).through(Helpers.decodeSources)
+    read(path).through(fs2.text.utf8.decode).through(Helpers.decodeSources)
 
   def stdinSources(using Logger[IO]): Stream[IO, URI] =
-    stdin.through(Helpers.decodeSources)
+    stdin.through(fs2.text.utf8.decode).through(Helpers.decodeSources)
 
   def persist[T: Encoder](path: Path): Pipe[IO, T, Nothing] =
     _.through(encodeJsonline).through(write(path))
@@ -45,7 +42,7 @@ object Storage {
     _.map(_.asJson.noSpaces).intersperse("\n").through(fs2.text.utf8.encode)
 
   def decodeJsonline[T: Decoder]: Pipe[IO, Byte, T] =
-    _.through(fs2.text.utf8.decode).through(decodeResult[T])
+    _.through(decodeResult)
 
   def writeString(path: Path): Pipe[IO, String, Nothing] =
     _.through(fs2.text.utf8.encode).through(write(path))
@@ -58,13 +55,10 @@ object Storage {
     out.through(Files[IO].writeAll(path))
   }
 
-  def read(path: Path): Stream[IO, String] = {
+  def read(path: Path): Stream[IO, Byte] = {
     val in = Files[IO].readAll(path)
-    val text =
-      if isGzip(path)
-      then
-        in.through(fs2.compression.Compression[IO].gunzip()).flatMap(_.content)
-      else in
-    text.through(fs2.text.utf8.decode)
+    if isGzip(path)
+    then in.through(fs2.compression.Compression[IO].gunzip()).flatMap(_.content)
+    else in
   }
 }

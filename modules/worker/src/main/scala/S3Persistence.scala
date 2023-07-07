@@ -19,9 +19,9 @@ import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
-import scala.concurrent.duration.*
 
 import java.net.URI
+import scala.concurrent.duration.*
 
 trait S3Persistence {
   def write(results: Chunk[Worker.Result]): Stream[IO, Nothing]

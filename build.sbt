@@ -49,7 +49,7 @@ lazy val files = module("files") {
   project
     .dependsOn(common)
     .settings(
-      libraryDependencies ++= Dependencies.effect ++ Dependencies.fs2CSV ++ Dependencies.circe ++ Dependencies.s3
+      libraryDependencies ++= Dependencies.effect ++ Dependencies.fs2CSV ++ Dependencies.circe ++ Dependencies.s3 ++ Dependencies.fs2Circe
     )
 }
 

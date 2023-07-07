@@ -18,6 +18,8 @@ object Dependencies {
 
   val s3 = Seq("io.laserdisc" %% "fs2-aws-s3" % "6.0.2")
 
+  val fs2Circe = Seq("io.circe" %% "circe-fs2" % "0.14.1")
+
   val jsoup = Seq("org.jsoup" % "jsoup" % "1.15.4")
 
   val emberClient = Seq("org.http4s" %% "http4s-ember-client" % "0.23.22")
