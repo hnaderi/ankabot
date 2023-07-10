@@ -9,7 +9,7 @@ object ContactExtractors {
       contacts = in.page.links.collect { case IsContact(value) => value }
     )
 
-  private object IsContact {
+  object IsContact {
     private val emailPattern = """mailto:(.+@.+)""".r
     private val phonePattern = """tel:(.{8,})""".r
     private val invalidPhoneCharacters = "[^+0-9]".r
@@ -25,26 +25,44 @@ object ContactExtractors {
       }
   }
 
-  private object IsSocialNetwork {
+  object IsSocialNetwork {
     private def website(pattern: String) =
-      s"""(?:https?://)(?:www.)?${pattern}""".r
+      s"""^(?:https?://)(?:www.)?${pattern}$$""".r
 
-    private val linkedin = website("linkedin\\.com/in/.+")
-    private val telegram = website("t\\.me/.+")
-    private val instagram = website("instagram\\.com/.+")
-    private val twitter = website("twitter\\.com/.+")
-    private val facebook = website("facebook\\.com/.+")
-    private val youtube = website("youtube\\.com/channel/.+")
+    private val linkedin = website("linkedin\\.com/in/.+/?")
+    private val linkedinCompany = website("linkedin\\.com/company/.+/?")
+    private val telegram = website("t\\.me/.+/?")
+    private val instagram = website("instagram\\.com/[^/]+/?")
+    private val twitter = website(
+      "twitter\\.com/(?!home|share)[^/]+/?(?:\\?[^/]*)?"
+    )
+    private val facebook = website("facebook\\.com/[a-zA-Z0-9\\-_]{3,}/?")
+    private val youtube = website("youtube\\.com/(?:@.+|c/.+)/?")
+    private val github = website("github\\.(?:com|io)/[^/]+/?")
+    private val gitlab = website("gitlab\\.(?:com|io)/[^/]+/?")
+    private val pinterest = website("pinterest\\.com/.+/?")
+    private val medium = website("medium\\.com/@[^/]+/?")
+    private val tiktok = website("tiktok\\.com/@[^/]+/?")
+    private val twitch = website("twitch\\.tv/[^/]+/?")
+    private val crunchbase = website("crunchbase\\.com/organization/.+/?")
 
     def unapply(str: String): Option[SocialNetwork] =
       str match {
-        case linkedin()  => Some(SocialNetwork.Linkedin)
-        case instagram() => Some(SocialNetwork.Instagram)
-        case twitter()   => Some(SocialNetwork.Twitter)
-        case facebook()  => Some(SocialNetwork.Facebook)
-        case youtube()   => Some(SocialNetwork.Youtube)
-        case telegram()  => Some(SocialNetwork.Telegram)
-        case _           => None
+        case linkedin()        => Some(SocialNetwork.Linkedin)
+        case linkedinCompany() => Some(SocialNetwork.LinkedinCompany)
+        case instagram()       => Some(SocialNetwork.Instagram)
+        case twitter()         => Some(SocialNetwork.Twitter)
+        case facebook()        => Some(SocialNetwork.Facebook)
+        case youtube()         => Some(SocialNetwork.Youtube)
+        case telegram()        => Some(SocialNetwork.Telegram)
+        case github()          => Some(SocialNetwork.Github)
+        case gitlab()          => Some(SocialNetwork.Gitlab)
+        case pinterest()       => Some(SocialNetwork.Pinterest)
+        case medium()          => Some(SocialNetwork.Medium)
+        case tiktok()          => Some(SocialNetwork.TikTok)
+        case twitch()          => Some(SocialNetwork.Twitch)
+        case crunchbase()      => Some(SocialNetwork.Crunchbase)
+        case _                 => None
       }
   }
 

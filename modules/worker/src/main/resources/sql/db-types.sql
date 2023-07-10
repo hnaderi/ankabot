@@ -9,11 +9,19 @@ create type fetch_result as enum (
 
 create type social_network as enum (
   'Linkedin',
+  'LinkedinCompany',
   'Telegram',
   'Instagram',
   'Twitter',
   'Facebook',
-  'Youtube'
+  'Youtube',
+  'Github',
+  'Gitlab',
+  'Pinterest',
+  'Medium',
+  'Crunchbase',
+  'Twitch',
+  'TikTok'
 );
 
 create type pricing as enum (

@@ -13,11 +13,19 @@ enum Contact derives Codec.AsObject {
 
 enum SocialNetwork {
   case Linkedin,
+    LinkedinCompany,
     Telegram,
     Instagram,
     Twitter,
     Facebook,
     Youtube,
+    Github,
+    Gitlab,
+    Pinterest,
+    Medium,
+    Crunchbase,
+    Twitch,
+    TikTok,
 }
 
 object SocialNetwork {
