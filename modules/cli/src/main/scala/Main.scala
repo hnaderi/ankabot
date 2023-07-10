@@ -30,6 +30,14 @@ object Main extends CMDApp(CLICommand()) {
         extractChild = children
       ).through(Storage.persist(output))
 
+    case CLICommand.ExtractRaw(output, inputs) =>
+      val input = inputs.read.through(Storage.decodeJsonline[RawData])
+
+      ExtractorRaw(
+        input = input,
+        maxParallel = 3 * this.computeWorkerThreadCount / 4
+      ).through(Storage.persist(output))
+
     case cmd: CLICommand.Scrape =>
       import cmd.*
       val input =

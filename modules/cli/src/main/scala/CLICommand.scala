@@ -15,6 +15,10 @@ enum CLICommand {
       inputs: InputPath = InputPath.StdIn,
       children: Boolean = true
   )
+  case ExtractRaw(
+      output: Path,
+      inputs: InputPath = InputPath.StdIn
+  )
   case Scrape(
       output: Path,
       inputs: InputPath = InputPath.StdIn,
@@ -66,6 +70,12 @@ object CLICommand {
           InputPath.opts,
           Opts.flag("no-children", "Don't extract children").orTrue
         ).mapN(Extract(_, _, _))
+      },
+      Command("extract-raw", "Extract from raw data") {
+        (
+          Opts.option[Path]("output", "Output file", "o"),
+          InputPath.opts,
+        ).mapN(ExtractRaw(_, _))
       },
       Command("scrape", "Scrape sources") {
         (
