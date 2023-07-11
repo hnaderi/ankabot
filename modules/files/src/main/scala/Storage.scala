@@ -24,7 +24,10 @@ object Storage {
   def stdinResults[T: Decoder]: Stream[IO, T] = stdin.through(decodeResult)
 
   private def decodeResult[T: Decoder]: Pipe[IO, Byte, T] =
-    _.through(io.circe.fs2.byteStreamParser)
+    _.through(fs2.text.utf8.decode)
+      .through(fs2.text.lines)
+      .filter(_.size < 1e7)
+      .through(io.circe.fs2.stringStreamParser)
       .flatMap(j => fromEither(j.as[T]))
 
   def sources(path: Path)(using Logger[IO]): Stream[IO, URI] =
