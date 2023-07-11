@@ -42,6 +42,7 @@ enum FetchError derives Codec.AsObject {
   case Timeout
   case BadStatus(status: Int, message: Option[String] = None)
   case Failed
+  case BadContent
 }
 
 final case class PageMetadata(name: String, content: String)

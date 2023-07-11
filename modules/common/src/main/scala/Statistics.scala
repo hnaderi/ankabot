@@ -10,6 +10,7 @@ final case class Statistics(
     ok: Long = 0,
     failed: Long = 0,
     timedout: Long = 0,
+    bad: Long = 0,
     byStatus: Map[Int, Long] = Map.empty,
     totalTime: FiniteDuration = Duration.Zero,
     timeDist: Distribution[FiniteDuration] =
@@ -26,6 +27,7 @@ final case class Statistics(
       ok: Long = ok,
       failed: Long = failed,
       timedout: Long = timedout,
+      bad: Long = bad,
       status: Int = -1
   ): Statistics = copy(
     total = total + 1,
@@ -34,6 +36,7 @@ final case class Statistics(
     ok = ok,
     failed = failed,
     timedout = timedout,
+    bad = bad,
     byStatus = if status > 0 then addStatus(status) else byStatus
   )
 
@@ -42,6 +45,7 @@ final case class Statistics(
       case Right(value) => update(result, ok = ok + 1, status = value.status)
       case Left(FetchError.Timeout) => update(result, timedout = timedout + 1)
       case Left(FetchError.Failed)  => update(result, failed = failed + 1)
+      case Left(FetchError.BadContent) => update(result, bad = bad + 1)
       case Left(FetchError.BadStatus(status, _)) =>
         update(result, status = status)
     }
@@ -73,6 +77,7 @@ Overall:
   OK: ${st.ok}
   Failed: ${st.failed}
   Timedout: ${st.timedout}
+  Bad: ${st.bad}
 Statuses:
 ${st.byStatus.map((k, v) => s"  $k: $v").mkString("\n")}
 Total: ${st.total}

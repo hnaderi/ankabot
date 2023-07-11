@@ -49,6 +49,7 @@ object Worker {
     case BadStatus
     case Timeout
     case Failure
+    case BadContent
   }
 
   object FetchResultType {
@@ -88,6 +89,8 @@ object Worker {
     case Right(value) => FetchRes(FetchResultType.Success, value.status.some)
     case Left(FetchError.Timeout) => FetchRes(FetchResultType.Timeout, None)
     case Left(FetchError.Failed)  => FetchRes(FetchResultType.Failure, None)
+    case Left(FetchError.BadContent) =>
+      FetchRes(FetchResultType.BadContent, None)
     case Left(FetchError.BadStatus(status, _)) =>
       FetchRes(FetchResultType.BadStatus, status.some)
   }

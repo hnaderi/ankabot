@@ -1,15 +1,19 @@
 package dev.hnaderi.ankabot
 
 import cats.effect.IO
+import cats.effect.kernel.Resource
 import cats.effect.std.Semaphore
 import io.odin.Logger
 import org.http4s.Header
 import org.http4s.Method.GET
+import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.dsl.io.*
 import org.http4s.client.middleware.FollowRedirect
 import org.http4s.client.middleware.GZip
+import org.http4s.headers.`Content-Length`
+import org.http4s.headers.`Content-Type`
 
 import java.net.URI
 import java.util.concurrent.TimeoutException
@@ -30,6 +34,31 @@ object Fetcher {
     "Sec-Fetch-Site" -> "none",
     "Sec-Fetch-User" -> "?1"
   )
+  private final val maxAcceptableSize = 1024 * 1024 // 1 MB
+
+  private def isOkToContinue(resp: Response[IO]): Boolean = {
+    val contentType = resp.headers.get[`Content-Type`]
+    val contentLength = resp.headers.get[`Content-Length`]
+    def okType(value: `Content-Type`) = value.mediaType.isText
+    def okLength(value: `Content-Length`) = value.length <= maxAcceptableSize
+
+    (contentLength, contentType) match {
+      case (Some(length), Some(ctype)) if okType(ctype) && okLength(length) =>
+        true
+      case (None, Some(ctype)) if okType(ctype)     => true
+      case (Some(length), None) if okLength(length) => true
+      case _                                        => false
+    }
+  }
+
+  extension (req: Resource[IO, Response[IO]]) {
+    private def guard(
+        handle: Response[IO] => IO[FetchedData]
+    ): IO[Either[FetchError, FetchedData]] = req.use(res =>
+      if isOkToContinue(res) then handle(res).map(Right(_))
+      else IO(Left(FetchError.BadContent))
+    )
+  }
 
   private def create(
       client: Client[IO],
@@ -42,7 +71,7 @@ object Fetcher {
 
           client
             .run(req)
-            .use { resp =>
+            .guard { resp =>
               val redirected = FollowRedirect
                 .getRedirectUris(resp)
               val baseURI = redirected.lastOption
@@ -75,7 +104,6 @@ object Fetcher {
             }
         }
         .timeout(timeoutDuration)
-        .map(Right(_))
         .recover {
           case _: TimeoutException => Left(FetchError.Timeout)
           case _                   => Left(FetchError.Failed)

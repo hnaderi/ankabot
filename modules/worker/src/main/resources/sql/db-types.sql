@@ -4,7 +4,8 @@ create type fetch_result as enum (
   'Success',
   'Timeout',
   'Failure',
-  'BadStatus'
+  'BadStatus',
+  'BadContent'
 );
 
 create type social_network as enum (
