@@ -10,12 +10,12 @@ object ContactExtractors {
     )
 
   object IsContact {
-    private val emailPattern = """mailto:(.+@.+)""".r
-    private val phonePattern = """tel:(.{8,})""".r
+    private val emailPattern = """^mailto:(.+@.+)""".r
+    private val phonePattern = """^tel:(.{8,})""".r
     private val invalidPhoneCharacters = "[^+0-9]".r
 
     def unapply(str: Link): Option[Contact] =
-      str.value.toString match {
+      Option(str.value.toString).filter(_.size < 1000).flatMap {
         case emailPattern(mail) => Contact.Email(mail).some
         case phonePattern(value) =>
           Contact.Phone(invalidPhoneCharacters.replaceAllIn(value, "")).some
@@ -47,7 +47,7 @@ object ContactExtractors {
     private val crunchbase = website("crunchbase\\.com/organization/.+/?")
 
     def unapply(str: String): Option[SocialNetwork] =
-      str match {
+      Option(str).filter(_.size <= 1000).flatMap {
         case linkedin()        => Some(SocialNetwork.Linkedin)
         case linkedinCompany() => Some(SocialNetwork.LinkedinCompany)
         case instagram()       => Some(SocialNetwork.Instagram)

@@ -28,7 +28,7 @@ private final class TechnologyExtractor(technologyMap: TechnologyMap)
 
   private def matchesScriptSrc(page: WebPage, patterns: TechnologyPatterns) =
     matchesAny(
-      page.scripts.view.filterNot(_.startsWith("data:")),
+      page.scripts.view.filterNot(s => s.startsWith("data:") || s.size > 1000),
       patterns.scriptSrc
     )
 
