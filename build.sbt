@@ -22,7 +22,7 @@ inThisBuild(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(common, scraper, extractor, cli, worker, files)
+  .aggregate(common, scraper, extractor, cli, worker, files, jsoup)
 
 def module(mname: String): Project => Project =
   _.in(file(s"modules/$mname"))

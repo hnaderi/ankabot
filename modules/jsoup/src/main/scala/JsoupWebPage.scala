@@ -74,15 +74,25 @@ final class JsoupWebPage private (doc: Document, val address: URI)
 }
 
 object JsoupWebPage {
+  private final val maxAllowedSize = 5e6
+
   def apply(body: String, base: URI): Either[Throwable, JsoupWebPage] =
     Either
       .catchNonFatal {
-        val d = Jsoup.parse(body)
-        d.setBaseUri(base.toString)
-        d
+        val bodySize = body.size
+        if bodySize < maxAllowedSize then {
+          val d = Jsoup.parse(body)
+          d.setBaseUri(base.toString)
+          d
+        } else throw TooLarge(bodySize)
       }
       .map(new JsoupWebPage(_, base))
 
   def apply(stored: FetchedData): Either[Throwable, JsoupWebPage] =
     apply(stored.body, stored.url)
+
+  final case class TooLarge(size: Long)
+      extends Exception(
+        s"Body size exceeds maximum allowed size! $size/$maxAllowedSize"
+      )
 }
