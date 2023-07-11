@@ -2,6 +2,7 @@ package dev.hnaderi.ankabot
 
 import cats.effect.IO
 import cats.syntax.all.*
+import dev.hnaderi.ankabot.extractors.ExtractorConfig
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
@@ -10,17 +11,15 @@ import java.net.URI
 
 type Extractor = ToExtract => IO[ExtractedData]
 object Extractor {
-  def build(patterns: IO[TechnologyMap] = Technology.load): IO[Extractor] =
-    patterns.map(extractors.All(_).io)
-
   def apply(
       input: Stream[IO, WebsiteData],
       maxParallel: Int,
-      extractChild: Boolean = true
+      extractChild: Boolean = true,
+      config: ExtractorConfig = ExtractorConfig.default
   )(using
       logger: Logger[IO]
   ): Stream[IO, WebsiteExtractedData] = (for {
-    extractor <- eval(build())
+    extractor <- eval(extractors.Builder(config))
     metrics <- ExtractionMetricsCollector.printer()
     reporter <- StatusReporter[URI]()
     jobs <- input

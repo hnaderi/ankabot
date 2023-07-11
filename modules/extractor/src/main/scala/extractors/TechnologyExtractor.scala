@@ -1,14 +1,17 @@
 package dev.hnaderi.ankabot
 package extractors
 
+import cats.effect.IO
 import cats.syntax.all.*
 
 import scala.util.matching.Regex
 
 private final class TechnologyExtractor(technologyMap: TechnologyMap)
-    extends DataExtractor {
+    extends Extractor {
   val technologies =
-    technologyMap.filter((_, v) => v.patterns != TechnologyPatterns.empty).toSet
+    technologyMap
+      .filter((_, v) => v.patterns != TechnologyPatterns.empty)
+      .toList
 
   extension (reg: Regex) {
     private inline def matchesTo(value: String): Boolean =
@@ -59,17 +62,20 @@ private final class TechnologyExtractor(technologyMap: TechnologyMap)
       )
     }
 
-  def apply(target: ToExtract): ExtractedData = ExtractedData(
-    technologies = technologies
-      .filter((_, tech) =>
+  def apply(target: ToExtract): IO[ExtractedData] =
+    technologies
+      .traverseFilter { case (name, tech) =>
         import tech.patterns
-        matchesHeader(target.data, patterns) ||
-        matchesCookies(target.data, patterns) ||
-        matchesScriptSrc(target.page, patterns) ||
-        matchesURL(target.page, patterns) ||
-        matchesMeta(target.page, patterns)
-      )
-      .map(_._1)
-  )
+        IO.blocking {
+          Option.when(
+            matchesHeader(target.data, patterns) ||
+              matchesCookies(target.data, patterns) ||
+              matchesScriptSrc(target.page, patterns) ||
+              matchesURL(target.page, patterns) ||
+              matchesMeta(target.page, patterns)
+          )(name)
+        }
+      }
+      .map(names => ExtractedData(technologies = names.toSet))
 
 }

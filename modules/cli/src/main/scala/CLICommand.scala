@@ -5,6 +5,7 @@ import cats.syntax.all.*
 import com.monovore.decline.Argument
 import com.monovore.decline.Command
 import com.monovore.decline.Opts
+import dev.hnaderi.ankabot.extractors.ExtractorConfig
 import fs2.io.file.Path
 
 import scala.concurrent.duration.*
@@ -13,11 +14,13 @@ enum CLICommand {
   case Extract(
       output: Path,
       inputs: InputPath = InputPath.StdIn,
-      children: Boolean = true
+      children: Boolean = true,
+      config: ExtractorConfig = ExtractorConfig.default
   )
   case ExtractRaw(
       output: Path,
-      inputs: InputPath = InputPath.StdIn
+      inputs: InputPath = InputPath.StdIn,
+      config: ExtractorConfig = ExtractorConfig.default
   )
   case Scrape(
       output: Path,
@@ -62,20 +65,27 @@ object CLICommand {
       .withDefault(ScrapeBackend.JDK)
   ).mapN(Scraper.Config(_, _, _, _, _, _))
 
+  private[cli] val extractConfig: Opts[ExtractorConfig] = (
+    Opts.flag("no-contacts", "don't extract contacts").orFalse,
+    Opts.flag("no-technologies", "don't extract technologies").orFalse,
+  ).mapN((c, t) => ExtractorConfig(noContacts = c, noTechnologies = t))
+
   def apply(): Command[CLICommand] = Command("ankabot", "Ankabot CLI")(
     Opts.subcommands(
       Command("extract", "Extract data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
           InputPath.opts,
-          Opts.flag("no-children", "Don't extract children").orTrue
-        ).mapN(Extract(_, _, _))
+          Opts.flag("no-children", "Don't extract children").orTrue,
+          extractConfig
+        ).mapN(Extract(_, _, _, _))
       },
       Command("extract-raw", "Extract from raw data") {
         (
           Opts.option[Path]("output", "Output file", "o"),
           InputPath.opts,
-        ).mapN(ExtractRaw(_, _))
+          extractConfig
+        ).mapN(ExtractRaw(_, _, _))
       },
       Command("scrape", "Scrape sources") {
         (

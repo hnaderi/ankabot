@@ -2,6 +2,7 @@ package dev.hnaderi.ankabot
 
 import cats.effect.IO
 import cats.syntax.all.*
+import dev.hnaderi.ankabot.extractors.ExtractorConfig
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
@@ -9,12 +10,10 @@ import io.odin.Logger
 import scala.concurrent.duration.Duration
 
 object ExtractorRaw {
-  def build(patterns: IO[TechnologyMap] = Technology.load): IO[Extractor] =
-    patterns.map(extractors.All(_).io)
-
   def apply(
       input: Stream[IO, RawData],
-      maxParallel: Int
+      maxParallel: Int,
+      config: ExtractorConfig = ExtractorConfig.default
   )(using
       logger: Logger[IO]
   ): Stream[IO, WebsiteExtractedData] = {
@@ -24,7 +23,7 @@ object ExtractorRaw {
     val emptyData = IO(ExtractedData())
 
     for {
-      extractor <- eval(build())
+      extractor <- eval(extractors.Builder(config))
       metrics <- ExtractionMetricsCollector.printer()
       jobs <- input.parEvalMap(maxParallel) { fetched =>
         fetched.pages

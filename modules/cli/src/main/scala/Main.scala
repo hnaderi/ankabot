@@ -21,21 +21,23 @@ object Main extends CMDApp(CLICommand()) {
   protected given logger: Logger[IO] = io.odin.consoleLogger[IO]()
 
   override def app(cmd: CLICommand): Stream[IO, Unit] = cmd match {
-    case CLICommand.Extract(output, inputs, children) =>
+    case CLICommand.Extract(output, inputs, children, config) =>
       val input = inputs.read.through(Storage.decodeJsonline[WebsiteData])
 
       Extractor(
         input = input,
         maxParallel = 3 * this.computeWorkerThreadCount / 4,
-        extractChild = children
+        extractChild = children,
+        config = config
       ).through(Storage.persist(output))
 
-    case CLICommand.ExtractRaw(output, inputs) =>
+    case CLICommand.ExtractRaw(output, inputs, config) =>
       val input = inputs.read.through(Storage.decodeJsonline[RawData])
 
       ExtractorRaw(
         input = input,
-        maxParallel = 3 * this.computeWorkerThreadCount / 4
+        maxParallel = 3 * this.computeWorkerThreadCount / 4,
+        config = config
       ).through(Storage.persist(output))
 
     case cmd: CLICommand.Scrape =>
@@ -56,7 +58,7 @@ object Main extends CMDApp(CLICommand()) {
       cmd match {
         case ServiceCommand.Migrate(pg) =>
           exec(DBPersistence.migrate(connect(pg).flatten))
-        case ServiceCommand.Start(rmq, pg, webPort, config, s3) =>
+        case ServiceCommand.Start(rmq, pg, webPort, config, s3, extConfig) =>
           for {
             (persist, upload) <- Persistence(connect(pg), s3)
             con <- resource(connect(rmq))
@@ -68,7 +70,7 @@ object Main extends CMDApp(CLICommand()) {
                   .useForever
               )
             )
-            extractor <- eval(Extractor.build())
+            extractor <- eval(extractors.Builder(extConfig))
             _ <- worker
               .Worker(con, persist, config, extractor)
               .concurrently(ws)

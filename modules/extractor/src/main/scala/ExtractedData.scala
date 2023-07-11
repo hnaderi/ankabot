@@ -1,7 +1,7 @@
 package dev.hnaderi.ankabot
 
-import io.circe.Codec
 import cats.Monoid
+import io.circe.Codec
 
 final case class ExtractedData(
     contacts: Set[Contact] = Set.empty,
@@ -9,6 +9,7 @@ final case class ExtractedData(
 ) derives Codec.AsObject
 
 object ExtractedData {
+  val empty: ExtractedData = ExtractedData()
   given Monoid[ExtractedData] = new {
     override def combine(x: ExtractedData, y: ExtractedData): ExtractedData =
       ExtractedData(
@@ -16,7 +17,7 @@ object ExtractedData {
         technologies = x.technologies ++ y.technologies
       )
 
-    override def empty: ExtractedData = ExtractedData()
+    override def empty: ExtractedData = ExtractedData.empty
   }
 }
 
