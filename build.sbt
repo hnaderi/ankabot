@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    tlBaseVersion := "0.1",
+    tlBaseVersion := "0.2",
     organization := "dev.hnaderi",
     organizationName := "Hossein Naderi",
     licenses := Seq(License.Apache2),
