@@ -60,6 +60,15 @@ object WebPage {
       .map(resolve(_).toString)
       .filterNot(_.isBlank)
       .toSet
+
+    def logos: Set[String] = page
+      .extract(
+        xpath"//*[self::footer or self::header]//*[@id[contains(., 'logo')] or @class[contains(., 'logo')]]//img",
+        "src"
+      )
+      .map(resolve(_).toString)
+      .filterNot(_.isBlank)
+      .toSet
   }
 }
 

@@ -14,6 +14,7 @@ final case class WebsiteExtractedData(
 
 final case class WebsiteInfoData(
     icons: Set[String] = Set.empty,
+    logos: Set[String] = Set.empty,
     title: Option[String] = None,
     name: Option[String] = None,
     description: Option[String] = None,

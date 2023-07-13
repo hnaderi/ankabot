@@ -6,6 +6,7 @@ import cats.syntax.all.*
 object InfoExtractor {
   def apply(page: WebPage): WebsiteInfoData = WebsiteInfoData(
     icons = page.icons,
+    logos = page.logos,
     title = page.title.some,
     name = page.getMeta("og:title", "og:site_name"),
     description = page.getMeta("og:description", "description"),
