@@ -20,7 +20,7 @@ object ExtractorRaw {
     def getPage(data: FetchedData) =
       IO.interruptibleMany(JsoupWebPage(data))
         .map(_.toOption.map(ToExtract(_, data)))
-    val emptyData = IO(ExtractedData())
+    val emptyData = IO((ExtractedData.empty, WebsiteInfoData.empty))
 
     for {
       extractor <- eval(extractors.Builder(config))
@@ -29,13 +29,17 @@ object ExtractorRaw {
         fetched.pages
           .traverse(currentPage =>
             getPage(currentPage).flatMap {
-              case Some(page) => extractor(page)
-              case None       => emptyData
+              case Some(page) =>
+                val info = extractors.InfoExtractor(page.page)
+                extractor(page).map((_, info))
+              case None => emptyData
             }.timed
           )
           .flatMap { x =>
-            val data = x.foldMap(_._2)
+            val data = x.foldMap(_._2._1)
             val spent = x.foldLeft(Duration.Zero)(_ + _._1)
+            val info =
+              x.headOption.map(_._2._2).getOrElse(WebsiteInfoData.empty)
 
             metrics
               .add(data, spent)
@@ -43,7 +47,8 @@ object ExtractorRaw {
                 WebsiteExtractedData(
                   fetched.domain,
                   data,
-                  fetched.pages.map(_.url).toSet
+                  fetched.pages.map(_.url).toSet,
+                  info = info
                 )
               )
           }

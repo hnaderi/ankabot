@@ -17,6 +17,9 @@ trait WebPage {
 
 object WebPage {
   extension (page: WebPage) {
+    inline def resolve(url: String): URI = page.address.resolve(url)
+    inline def resolve(url: URI): URI = page.address.resolve(url)
+
     def toPersistedData(raw: FetchedData): PersistedData = new PersistedData(
       raw,
       ScrapedData(

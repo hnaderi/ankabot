@@ -41,7 +41,8 @@ object Extractor {
         } yield WebsiteExtractedData(
           domain = fetched.home.source,
           extracted = allX,
-          pages = home.page.childPages
+          pages = home.page.childPages,
+          info = extractors.InfoExtractor(home.page)
         )
       }
   } yield jobs)
