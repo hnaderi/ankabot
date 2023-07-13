@@ -4,6 +4,7 @@ import cats.syntax.all.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
 import org.jsoup.select.NodeVisitor
@@ -12,15 +13,20 @@ import java.net.URI
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.*
 
+import Selector.*
+
 final class JsoupWebPage private (doc: Document, val address: URI)
     extends WebPage {
+  private def sel(selector: Selector) = (selector match {
+    case Selector.XPath(value) => doc.selectXpath(value)
+    case Selector.CSS(value)   => doc.select(value)
+  }).asScala
 
-  override lazy val scripts: Set[String] = select(doc, "script", "src")
+  override def extract(selector: Selector, attr: String): Iterable[String] =
+    sel(selector).map(_.attr(attr))
 
   override lazy val links: Set[Link] =
-    doc
-      .select("a")
-      .asScala
+    sel(css"a")
       .map(a =>
         try {
           Link(a.text(), URI(a.absUrl("href"))).some
@@ -39,17 +45,13 @@ final class JsoupWebPage private (doc: Document, val address: URI)
     .map(_.getData())
     .toSet
 
-  override lazy val styles: Set[String] = select(doc, "link", "href")
+  override lazy val styles: Set[String] = selectAttr("link", "href")
+  override lazy val scripts: Set[String] = selectAttr("script", "src")
 
-  override lazy val icons: Set[String] = doc
-    .select("""link[rel*="icon"]""")
+  private def selectAttr(selector: String, attr: String) = doc
+    .select(selector)
     .asScala
-    .map { el =>
-      val absUrl = el.absUrl("href")
-      if absUrl.isBlank
-      then el.attr("href")
-      else absUrl
-    }
+    .map(_.attr(attr))
     .filterNot(_.isBlank)
     .toSet
 
@@ -66,23 +68,13 @@ final class JsoupWebPage private (doc: Document, val address: URI)
   }
 
   override lazy val metadata: Set[PageMetadata] =
-    doc
-      .select("meta")
-      .asScala
-      .collect { m =>
-        (m.attr("name"), m.attr("content")) match {
-          case (name, content) if !name.isBlank() || !content.isBlank() =>
-            PageMetadata(name, content)
-        }
+    sel(css"meta").collect { m =>
+      (m.attr("name"), m.attr("content")) match {
+        case (name, content) if !name.isBlank() || !content.isBlank() =>
+          PageMetadata(name, content)
       }
-      .toSet
+    }.toSet
 
-  private def select(doc: Document, selector: String, attr: String) = doc
-    .select(selector)
-    .asScala
-    .map(_.attr(attr))
-    .filterNot(_.isBlank)
-    .toSet
 }
 
 object JsoupWebPage {

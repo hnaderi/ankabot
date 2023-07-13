@@ -1,6 +1,11 @@
 package dev.hnaderi.ankabot
 
+import cats.syntax.all.*
+
 import java.net.URI
+import java.net.URISyntaxException
+
+import Selector.*
 
 trait WebPage {
   def address: URI
@@ -10,14 +15,25 @@ trait WebPage {
   def metadata: Set[PageMetadata]
   def links: Set[Link]
   def comments: Set[String]
-  def icons: Set[String]
+
+  def extract(selector: Selector, attr: String): Iterable[String]
 
   def texts: Iterable[String]
 }
 
 object WebPage {
   extension (page: WebPage) {
-    inline def resolve(url: String): URI = page.address.resolve(url)
+    inline def resolve(url: String): URI = {
+      Either.catchNonFatal(page.address.resolve(url)) match {
+        case Right(value) => value
+        case Left(_: URISyntaxException) =>
+          val fixed = url.replace(' ', '+')
+          Either
+            .catchNonFatal(page.address.resolve(fixed))
+            .getOrElse(page.address)
+        case _ => page.address
+      }
+    }
     inline def resolve(url: URI): URI = page.address.resolve(url)
 
     def toPersistedData(raw: FetchedData): PersistedData = new PersistedData(
@@ -38,5 +54,23 @@ object WebPage {
         .filterNot(uri => uri.isAbsolute || uri.getPath.isBlank)
         .map(base.resolve)
     }
+
+    def icons: Set[String] = page
+      .extract(css"""link[rel*="icon"]""", "href")
+      .map(resolve(_).toString)
+      .filterNot(_.isBlank)
+      .toSet
+  }
+}
+
+enum Selector {
+  case XPath(value: String)
+  case CSS(value: String)
+}
+
+object Selector {
+  extension (sc: StringContext) {
+    def xpath(args: Any*): XPath = XPath(sc.s(args: _*))
+    def css(args: Any*): CSS = CSS(sc.s(args: _*))
   }
 }
