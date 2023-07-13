@@ -7,6 +7,6 @@ import java.net.URI
 
 final case class WebsiteExtractedData(
     domain: URI,
-    extracted: ExtractedData = ExtractedData(),
+    extracted: ExtractedData = ExtractedData.empty,
     pages: Set[URI] = Set.empty
 ) derives Codec.AsObject

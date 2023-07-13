@@ -41,6 +41,18 @@ final class JsoupWebPage private (doc: Document, val address: URI)
 
   override lazy val styles: Set[String] = select(doc, "link", "href")
 
+  override lazy val icons: Set[String] = doc
+    .select("""link[rel*="icon"]""")
+    .asScala
+    .map { el =>
+      val absUrl = el.absUrl("href")
+      if absUrl.isBlank
+      then el.attr("href")
+      else absUrl
+    }
+    .filterNot(_.isBlank)
+    .toSet
+
   override lazy val texts: Iterable[String] = {
     val all = ListBuffer.empty[String]
 

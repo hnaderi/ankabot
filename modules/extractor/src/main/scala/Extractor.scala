@@ -55,6 +55,9 @@ object Extractor {
           .map(_.toOption.map(ToExtract(_, result)))
     }
 }
+extension (a: Extractor) {
+  def and(b: Extractor): Extractor = x => a(x).both(b(x)).map(_ combine _)
+}
 
 final case class ToExtract(
     page: WebPage,

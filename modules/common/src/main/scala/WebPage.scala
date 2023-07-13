@@ -10,6 +10,7 @@ trait WebPage {
   def metadata: Set[PageMetadata]
   def links: Set[Link]
   def comments: Set[String]
+  def icons: Set[String]
 
   def texts: Iterable[String]
 }
