@@ -10,7 +10,7 @@ abstract class CMDApp[T](cmd: Command[T]) extends IOApp {
   protected given logger: Logger[IO]
 
   override final def run(args: List[String]): IO[ExitCode] =
-    cmd.parse(args, sys.env) match {
+    IO.println(CMDApp.banner).as(cmd.parse(args, sys.env)).flatMap {
       case Left(value) => IO.println(value).as(ExitCode.Success)
       case Right(value) =>
         for {
@@ -28,4 +28,31 @@ abstract class CMDApp[T](cmd: Command[T]) extends IOApp {
     }
 
   def app(t: T): fs2.Stream[IO, Unit]
+}
+
+object CMDApp {
+  private val banner = s"""
+${Console.YELLOW}
+
+                ,, ,,                     ,,,,,,,,,               ,
+             ,,       ,,        ,,,*(((((((((,,,,,,.           ,,  ,,
+          ,,             ,,,,,(((((((((((((((((((((,,      .,,       ,
+       ,,               ,,,,*(((((((((((((((((((((((((,,,,            ,,
+   ,,,                  ,,,(((((((*,((((((((((((/,/(((((,,              ,
+               ,,,    ,,,*((((,*@@@@@@@,((((,,@@@@@@@,,(((,,,            ,,
+              ,     ,,(*/((((,@@@@@,,&&&,*(,&@@@@#,&&&,,(((,,             .,
+            ,,      ,  ,(((((,@@@@@,&&&&,*(,@@@@@,,&&&#,(((,,,    ,,,       ,,
+          ,,          .,,,*((/,@@@@@@@@,,(((,(@@@@@@@(,((((,,,       ,       .,
+         ,,             ,,,(((((/,,,,,(((((((((,,,,,(((((,,,,,        ,
+       ,,           ,,,,,  ,(/((((((((((((,((((((((((((((,,            ,
+      ,            ,,      ,,,*(((((((((((((((((((((((,,,,,,            ,
+                  ,,          ,(,,,(,((((((((((*(,,,,,       ,           ,
+                 ,,            ,             ,,,             ,            ,
+                 ,                                            ,
+                ,                                             ,
+               ,                                              .,
+                                                               ,
+
+${Console.RESET}
+"""
 }
